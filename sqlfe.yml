@@ -1,0 +1,4 @@
+routes:
+  /stuff:
+    query: >
+      select id from stuff

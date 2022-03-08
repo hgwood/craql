@@ -37,6 +37,25 @@ routes:
         email = substring(${headers.authorization} from 7)
     arity: 1
     ignoreBody: true
-  /articles/feed:
+  /articles:
     query: >
-      select * from feed
+      select
+        title as "article.title",
+        slug as "article.slug",
+        body as "article.body",
+        created_at as "article.createdAt",
+        updated_at as "article.updatedAt",
+        description as "article.description",
+        author.bio as "article.author.bio",
+        author.image as "article.author.image",
+        author.name as "article.author.username",
+        follower.id is not null as "article.author.following",
+        favoriter.id is not null as "article.favorited",
+        coalesce(article_favorite_count.count, 0) as "article.favoritesCount"
+      from article
+      join "user" as author on author.id = article.author_id
+      left join follow on follow.following_id = author.id
+      left join "user" as follower on follower.id = follow.follower_id
+      left join favorite on favorite.article_id = article.id
+      left join "user" as favoriter on favoriter.id = favorite.user_id
+      left join article_favorite_count on article_favorite_count.article_id = article.id

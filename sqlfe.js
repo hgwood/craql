@@ -15,6 +15,7 @@ const dbConnection = {
 };
 
 const pgp = pgPromise();
+pgp.pg.types.setTypeParser(20, BigInt); // see https://github.com/vitaly-t/pg-promise/wiki/BigInt
 
 async function main() {
   const yml = (await fs.readFile("sqlfe.yml")).toString();
@@ -78,7 +79,6 @@ async function main() {
           }
           throw err;
         }
-        console.log({ queryResult });
         let responseBody = queryResult?.rows || [];
         if (route.select) {
           responseBody = responseBody.map((row) => row[route.select]);
@@ -100,7 +100,7 @@ async function main() {
         }
         console.log({ responseBody });
         res.writeHead(200);
-        res.write(JSON.stringify(responseBody));
+        res.write(pgp.as.json(responseBody, true));
         res.end();
       } catch (err) {
         console.error(err);

@@ -1,4 +1,4 @@
-drop view if exists feed;
+drop view if exists article_for_user;
 drop view if exists article_favorite_count;
 drop table if exists favorite;
 drop table if exists follow;
@@ -45,18 +45,44 @@ create view article_favorite_count as (
   group by article_id
 );
 
-create view feed as (
+create view article_for_user as (
   select
     article.slug,
+    article.title,
     article.description,
     article.body,
     article.created_at,
     article.updated_at,
+    author.bio as author_bio,
+    author.image as author_image,
+    author.name as author_name,
     favorite.user_id is not null as favorited,
     article_favorite_count.count as favorites_count,
-    author.id
+    follow.follower_id
   from article
   join "user" as author on author.id = article.author_id
   left join favorite on favorite.article_id = article.id
   left join article_favorite_count on article_favorite_count.article_id = article.id
+  left join follow on follow.following_id = author.id
 );
+
+delete from article;
+delete from "user";
+
+insert into "user"
+  (name, email, password, image, bio)
+values
+  ('Alice', 'alice@example.com', 'password', null, null),
+  ('Bob', 'bob@example.com', 'password', null, null),
+  ('Claire', 'claire@example.com', 'password', null, null);
+
+insert into article
+  (slug, title, description, body, author_id)
+values
+  (
+    'hello-world',
+    'Hello World',
+    'This is the first article',
+    'This is the body of the first article',
+    (select id from "user" where name = 'Alice')
+  );

@@ -1,0 +1,2 @@
+GET http://localhost:8788/articles
+Authorization: Token hx452@mail.com

@@ -37,17 +37,25 @@ async function main() {
           return;
         }
         let body;
-        try {
-          body = await streamConsumers.json(req);
-        } catch (err) {
-          res.writeHead(400);
-          res.end(err.message);
-          return;
+        if (
+          req.headers["content-type"] === "application/json" &&
+          !route.ignoreBody
+        ) {
+          try {
+            body = await streamConsumers.json(req);
+          } catch (err) {
+            res.writeHead(400);
+            res.end(err.message);
+            return;
+          }
         }
-        console.log(route, body);
+        console.log({ route, body });
         let queryResult;
         try {
-          queryResult = await db.result(route.query, body);
+          queryResult = await db.result(route.query, {
+            body,
+            headers: req.headers,
+          });
           // queryResult = await pgPool.query(formattedQuery);
         } catch (err) {
           const [, propertyName] =
@@ -83,7 +91,12 @@ async function main() {
           return result;
         });
         if (route.arity === 1) {
-          responseBody = responseBody?.[0] || {};
+          responseBody = responseBody?.[0];
+          if (!responseBody) {
+            res.writeHead(404);
+            res.end("Not found");
+            return;
+          }
         }
         console.log({ responseBody });
         res.writeHead(200);

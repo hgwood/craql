@@ -3,14 +3,40 @@ routes:
     query: >
       insert into "user"
       (name, email, password)
-      values (${user.username}, ${user.email}, ${user.password})
+      values (${body.user.username}, ${body.user.email}, ${body.user.password})
       returning
         name as "user.username",
         email as "user.email",
         image as "user.image",
         bio as "user.bio",
-        null as "user.token"
+        email as "user.token"
     arity: 1
+  /users/login:
+    query: >
+      select
+        name as "user.username",
+        email as "user.email",
+        image as "user.image",
+        bio as "user.bio",
+        email as "user.token"
+      from "user"
+      where
+        email = ${body.user.email}
+        and password = ${body.user.password}
+    arity: 1
+  /user:
+    query: >
+      select
+        name as "user.username",
+        email as "user.email",
+        image as "user.image",
+        bio as "user.bio",
+        email as "user.token"
+      from "user"
+      where
+        email = substring(${headers.authorization} from 7)
+    arity: 1
+    ignoreBody: true
   /articles/feed:
     query: >
       select * from feed

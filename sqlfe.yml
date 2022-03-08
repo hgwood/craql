@@ -1,4 +1,26 @@
 routes:
-  /stuff:
+  /users:
     query: >
-      select id from stuff
+      insert into "user"
+      (name, email, password)
+      values (${user.username}, ${user.email}, ${user.password})
+      returning json_build_object(
+        'user',
+        json_build_object(
+          'username',
+          name,
+          'email',
+          email,
+          'image',
+          image,
+          'bio',
+          bio,
+          'token',
+          null
+        )
+      )
+    arity: 1
+    select: json_build_object
+  /articles/feed:
+    query: >
+      select * from feed

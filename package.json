@@ -3,11 +3,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "nodemon --require dotenv/config sqlfe.js",
+    "dev": "nodemon --require dotenv/config --ext js,yml sqlfe.js",
     "migrate": "node --require dotenv/config migrate.js"
   },
   "dependencies": {
     "pg": "8.7.3",
+    "pg-promise": "10.11.1",
     "yaml": "1.10.2"
   },
   "devDependencies": {

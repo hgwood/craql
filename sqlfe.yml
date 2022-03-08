@@ -4,23 +4,13 @@ routes:
       insert into "user"
       (name, email, password)
       values (${user.username}, ${user.email}, ${user.password})
-      returning json_build_object(
-        'user',
-        json_build_object(
-          'username',
-          name,
-          'email',
-          email,
-          'image',
-          image,
-          'bio',
-          bio,
-          'token',
-          null
-        )
-      )
+      returning
+        name as "user.username",
+        email as "user.email",
+        image as "user.image",
+        bio as "user.bio",
+        null as "user.token"
     arity: 1
-    select: json_build_object
   /articles/feed:
     query: >
       select * from feed

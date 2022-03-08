@@ -4,6 +4,7 @@ import pg from "pg";
 import yaml from "yaml";
 import pgPromise from "pg-promise";
 import streamConsumers from "stream/consumers";
+import _ from "lodash";
 
 const dbConnection = {
   host: process.env.PGHOST,
@@ -74,6 +75,13 @@ async function main() {
         if (route.select) {
           responseBody = responseBody.map((row) => row[route.select]);
         }
+        responseBody = responseBody.map((row) => {
+          const result = {};
+          Object.entries(row).forEach(([key, value]) => {
+            _.set(result, key, value);
+          });
+          return result;
+        });
         if (route.arity === 1) {
           responseBody = responseBody?.[0] || {};
         }

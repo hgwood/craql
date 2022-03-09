@@ -42,6 +42,7 @@ async function main() {
         let body;
         if (
           req.headers["content-type"] === "application/json" &&
+          req.method === "POST" &&
           !route.ignoreBody
         ) {
           try {

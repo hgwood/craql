@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "nodemon --require dotenv/config --ext js,yml sqlfe.js",
+    "dev": "nodemon --require dotenv/config --ext js,yml --inspect sqlfe.js",
     "migrate": "node --require dotenv/config migrate.js"
   },
   "dependencies": {

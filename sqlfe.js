@@ -5,6 +5,7 @@ import yaml from "yaml";
 import pgPromise from "pg-promise";
 import streamConsumers from "stream/consumers";
 import _ from "lodash";
+import mustache from "mustache";
 
 const dbConnection = {
   host: process.env.PGHOST,
@@ -54,11 +55,14 @@ async function main() {
         console.log({ route, body });
         let queryResult;
         try {
-          queryResult = await db.result(route.query, {
+          const templateVars = {
             body,
             headers: req.headers,
             query: Object.fromEntries(reqUrl.searchParams.entries()),
-          });
+          };
+          const mustacheQuery = mustache.render(route.query, templateVars);
+          console.log({ mustacheQuery });
+          queryResult = await db.result(mustacheQuery, templateVars);
           // queryResult = await pgPool.query(formattedQuery);
         } catch (err) {
           const [, propertyName] =

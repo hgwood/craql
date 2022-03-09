@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "lodash": "4.17.21",
+    "mustache": "4.2.0",
     "pg": "8.7.3",
     "pg-promise": "10.11.1",
     "yaml": "1.10.2"

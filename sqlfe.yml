@@ -59,3 +59,6 @@ routes:
       left join favorite on favorite.article_id = article.id
       left join "user" as favoriter on favoriter.id = favorite.user_id
       left join article_favorite_count on article_favorite_count.article_id = article.id
+      where
+        true
+        {{#query.author}}and author.name = ${query.author}{{/query.author}}

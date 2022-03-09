@@ -1,2 +1,25 @@
+POST http://localhost:8788/users
+Content-Type: application/json
+
+{
+  "user": {
+    "username": "test",
+    "email": "test@example.com",
+    "password": "password"
+  }
+}
+
+###
+
 GET http://localhost:8788/articles
+Authorization: Token hx452@mail.com
+
+###
+
+GET http://localhost:8788/articles?author=Alice
+Authorization: Token hx452@mail.com
+
+###
+
+GET http://localhost:8788/articles?author=Bob
 Authorization: Token hx452@mail.com

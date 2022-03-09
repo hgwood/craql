@@ -25,8 +25,9 @@ async function main() {
 
   const server = http
     .createServer(async (req, res) => {
+      const reqUrl = new URL(req.url, "http://localhost");
       try {
-        const route = sqlfe.routes[req.url];
+        const route = sqlfe.routes[reqUrl.pathname];
         if (!route) {
           res.writeHead(404);
           res.end();
@@ -56,6 +57,7 @@ async function main() {
           queryResult = await db.result(route.query, {
             body,
             headers: req.headers,
+            query: Object.fromEntries(reqUrl.searchParams.entries()),
           });
           // queryResult = await pgPool.query(formattedQuery);
         } catch (err) {

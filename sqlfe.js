@@ -89,13 +89,19 @@ async function main() {
         if (route.select) {
           responseBody = responseBody.map((row) => row[route.select]);
         }
-        responseBody = responseBody.map((row) => {
+        let needsMerging = false;
+        responseBody = responseBody.map((row, index) => {
           const result = {};
           Object.entries(row).forEach(([key, value]) => {
-            _.set(result, key, value);
+            const indexAwareKey = key.replaceAll("[#]", `[${index}]`);
+            needsMerging = needsMerging || indexAwareKey !== key;
+            _.set(result, indexAwareKey, value);
           });
           return result;
         });
+        if (needsMerging) {
+          responseBody = _.merge(...responseBody);
+        }
         if (route.arity === 1) {
           responseBody = responseBody?.[0];
           if (!responseBody) {

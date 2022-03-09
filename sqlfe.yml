@@ -40,18 +40,18 @@ routes:
   /articles:
     query: >
       select
-        title as "article.title",
-        slug as "article.slug",
-        body as "article.body",
-        created_at as "article.createdAt",
-        updated_at as "article.updatedAt",
-        description as "article.description",
-        author.bio as "article.author.bio",
-        author.image as "article.author.image",
-        author.name as "article.author.username",
-        coalesce(article_favorite_count.count, 0) as "article.favoritesCount",
-        follow.follower_id is not null as "article.author.following",
-        favorite.user_id is not null as "article.favorited"
+        title as "articles[#].title",
+        slug as "articles[#].slug",
+        body as "articles[#].body",
+        created_at as "articles[#].createdAt",
+        updated_at as "articles[#].updatedAt",
+        description as "articles[#].description",
+        author.bio as "articles[#].author.bio",
+        author.image as "articles[#].author.image",
+        author.name as "articles[#].author.username",
+        coalesce(article_favorite_count.count, 0) as "articles[#].favoritesCount",
+        follow.follower_id is not null as "articles[#].author.following",
+        favorite.user_id is not null as "articles[#].favorited"
       from article
       join "user" as author on author.id = article.author_id
       left join article_favorite_count on article_favorite_count.article_id = article.id

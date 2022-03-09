@@ -110,6 +110,9 @@ async function main() {
             return;
           }
         }
+        if (route.count) {
+          responseBody[route.count] = queryResult.rowCount;
+        }
         console.log({ responseBody });
         res.writeHead(200);
         res.write(pgp.as.json(responseBody, true));

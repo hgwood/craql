@@ -69,3 +69,4 @@ routes:
       order by article.created_at
       {{#query.limit}}limit ${query.limit}{{/query.limit}}
       {{#query.offset}}offset ${query.offset}{{/query.offset}}
+    count: articlesCount

@@ -49,16 +49,20 @@ routes:
         author.bio as "article.author.bio",
         author.image as "article.author.image",
         author.name as "article.author.username",
-        follower.id is not null as "article.author.following",
-        favoriter.id is not null as "article.favorited",
-        coalesce(article_favorite_count.count, 0) as "article.favoritesCount"
+        coalesce(article_favorite_count.count, 0) as "article.favoritesCount",
+        follow.follower_id is not null as "article.author.following",
+        favorite.user_id is not null as "article.favorited"
       from article
       join "user" as author on author.id = article.author_id
-      left join follow on follow.following_id = author.id
-      left join "user" as follower on follower.id = follow.follower_id
-      left join favorite on favorite.article_id = article.id
-      left join "user" as favoriter on favoriter.id = favorite.user_id
       left join article_favorite_count on article_favorite_count.article_id = article.id
+      join "user" as "current_user" on "current_user".email = substring(${headers.authorization} from 7)
+      left join follow on
+        follow.following_id = author.id
+        and follow.follower_id = "current_user".id
+      left join favorite on
+        favorite.article_id = article.id
+        and favorite.user_id = "current_user".id
       where
         true
         {{#query.author}}and author.name = ${query.author}{{/query.author}}
+        {{#query.favorited}}and (select id from "user" where name = ${query.favorited}) = any(article_favorite_count.favoriters){{/query.favorited}}

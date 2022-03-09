@@ -12,14 +12,29 @@ Content-Type: application/json
 ###
 
 GET http://localhost:8788/articles
-Authorization: Token hx452@mail.com
+Authorization: Token alice@example.com
+
+###
+
+GET http://localhost:8788/articles
+Authorization: Token bob@example.com
 
 ###
 
 GET http://localhost:8788/articles?author=Alice
-Authorization: Token hx452@mail.com
+Authorization: Token alice@example.com
 
 ###
 
 GET http://localhost:8788/articles?author=Bob
-Authorization: Token hx452@mail.com
+Authorization: Token alice@example.com
+
+###
+
+GET http://localhost:8788/articles?favorited=Bob
+Authorization: Token alice@example.com
+
+###
+
+GET http://localhost:8788/articles?favorited=Claire
+Authorization: Token alice@example.com

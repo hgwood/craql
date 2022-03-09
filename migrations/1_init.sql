@@ -40,7 +40,8 @@ create table favorite (
 create view article_favorite_count as (
   select
     article_id,
-    count(*) as count
+    count(*) as count,
+    array_agg(user_id) as favoriters
   from favorite
   group by article_id
 );
@@ -71,18 +72,42 @@ delete from "user";
 
 insert into "user"
   (name, email, password, image, bio)
-values
+  values
   ('Alice', 'alice@example.com', 'password', null, null),
   ('Bob', 'bob@example.com', 'password', null, null),
   ('Claire', 'claire@example.com', 'password', null, null);
 
 insert into article
   (slug, title, description, body, author_id)
-values
+  values
   (
     'hello-world',
     'Hello World',
     'This is the first article',
     'This is the body of the first article',
+    (select id from "user" where name = 'Alice')
+  );
+
+insert into favorite
+  (user_id, article_id)
+  values
+  (
+    (select id from "user" where name = 'Alice'),
+    (select id from article where slug = 'hello-world')
+  ),
+  (
+    (select id from "user" where name = 'Bob'),
+    (select id from article where slug = 'hello-world')
+  );
+
+insert into follow
+  (follower_id, following_id)
+  values
+  (
+    (select id from "user" where name = 'Alice'),
+    (select id from "user" where name = 'Bob')
+  ),
+  (
+    (select id from "user" where name = 'Bob'),
     (select id from "user" where name = 'Alice')
   );

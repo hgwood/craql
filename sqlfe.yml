@@ -54,7 +54,9 @@ routes:
       from article
       join "user" as author on author.id = article.author_id
       left join article_favorite_count on article_favorite_count.article_id = article.id
-      join "user" as "current_user" on "current_user".email = substring(${headers.authorization} from 7)
+      left join "user" as "current_user" on
+        {{#headers.authorization}}"current_user".email = substring(${headers.authorization} from 7){{/headers.authorization}}
+        {{^headers.authorization}}"current_user".email = null{{/headers.authorization}}
       left join follow on
         follow.following_id = author.id
         and follow.follower_id = "current_user".id

@@ -12,6 +12,10 @@ Content-Type: application/json
 ###
 
 GET http://localhost:8788/articles
+
+###
+
+GET http://localhost:8788/articles
 Authorization: Token alice@example.com
 
 ###

@@ -38,3 +38,13 @@ Authorization: Token alice@example.com
 
 GET http://localhost:8788/articles?favorited=Claire
 Authorization: Token alice@example.com
+
+###
+
+GET http://localhost:8788/articles?limit=1
+Authorization: Token alice@example.com
+
+###
+
+GET http://localhost:8788/articles?offset=1&limit=1
+Authorization: Token alice@example.com

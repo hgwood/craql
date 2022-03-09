@@ -86,6 +86,13 @@ insert into article
     'This is the first article',
     'This is the body of the first article',
     (select id from "user" where name = 'Alice')
+  ),
+  (
+    'hello-universe',
+    'Hello Universe',
+    'This is the second article',
+    'This is the body of the second article',
+    (select id from "user" where name = 'Claire')
   );
 
 insert into favorite

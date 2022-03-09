@@ -66,3 +66,6 @@ routes:
         true
         {{#query.author}}and author.name = ${query.author}{{/query.author}}
         {{#query.favorited}}and (select id from "user" where name = ${query.favorited}) = any(article_favorite_count.favoriters){{/query.favorited}}
+      order by article.created_at
+      {{#query.limit}}limit ${query.limit}{{/query.limit}}
+      {{#query.offset}}offset ${query.offset}{{/query.offset}}

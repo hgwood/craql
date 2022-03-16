@@ -1,3 +1,4 @@
+drop function if exists "/articles/feed";
 drop function if exists "/articles";
 drop function if exists as_json(article_for_user);
 drop function if exists articles_for_user;
@@ -164,8 +165,11 @@ create function "/articles" (
     select
       json_build_object(
         'articles',
-        json_agg(
-          (article).as_json
+        coalesce(
+          json_agg(
+            (article).as_json
+          ),
+          json_build_array()
         ),
         'articlesCount',
         count(*)
@@ -191,8 +195,11 @@ create function "/articles/feed" (
     select
       json_build_object(
         'articles',
-        json_agg(
-          (article).as_json
+        coalesce(
+          json_agg(
+            (article).as_json
+          ),
+          json_build_array()
         ),
         'articlesCount',
         count(*)

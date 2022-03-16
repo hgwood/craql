@@ -1,5 +1,7 @@
 drop function if exists "/articles";
+drop function if exists as_json(article_for_user);
 drop function if exists articles_for_user;
+drop type article_for_user;
 drop view if exists article_favorite_count;
 drop table if exists favorite;
 drop table if exists follow;
@@ -47,6 +49,21 @@ create view article_favorite_count as (
   group by article_id
 );
 
+create type article_for_user as (
+  title text,
+  slug text,
+  description text,
+  body text,
+  created_at timestamp,
+  updated_at timestamp,
+  favorites_count bigint,
+  favorited boolean,
+  author_bio text,
+  author_image text,
+  author_name text,
+  author_followed boolean
+);
+
 create function articles_for_user (
   requesting_user_id bigint,
   filter_by_author_name text,
@@ -54,20 +71,7 @@ create function articles_for_user (
   "offset" bigint,
   "limit" bigint
 )
-  returns table (
-    title text,
-    slug text,
-    description text,
-    body text,
-    created_at timestamp,
-    updated_at timestamp,
-    favorites_count bigint,
-    favorited boolean,
-    author_bio text,
-    author_image text,
-    author_name text,
-    author_followed boolean
-  )
+  returns setof article_for_user
   as $$
     select
       article.title,
@@ -109,6 +113,45 @@ create function articles_for_user (
   language sql
   stable;
 
+create function as_json (
+  article article_for_user
+)
+  returns json
+  as $$
+    select
+      json_build_object(
+        'title',
+        article.title,
+        'slug',
+        article.slug,
+        'description',
+        article.description,
+        'body',
+        article.body,
+        'createdAt',
+        article.created_at,
+        'updatedAt',
+        article.updated_at,
+        'favoritesCount',
+        article.favorites_count,
+        'favorited',
+        article.favorited,
+        'author',
+        json_build_object(
+          'bio',
+          article.author_bio,
+          'image',
+          article.author_image,
+          'username',
+          article.author_name,
+          'followed',
+          article.author_followed
+        )
+      )
+  $$
+  language sql
+  stable;
+
 create function "/articles" (
   requesting_user_email text,
   filter_by_author_name text,
@@ -122,35 +165,7 @@ create function "/articles" (
       json_build_object(
         'articles',
         json_agg(
-          json_build_object(
-            'title',
-            title,
-            'slug',
-            slug,
-            'description',
-            description,
-            'body',
-            body,
-            'createdAt',
-            created_at,
-            'updatedAt',
-            updated_at,
-            'favoritesCount',
-            favorites_count,
-            'favorited',
-            favorited,
-            'author',
-            json_build_object(
-              'bio',
-              author_bio,
-              'image',
-              author_image,
-              'username',
-              author_name,
-              'followed',
-              author_followed
-            )
-          )
+          (article).as_json
         ),
         'articlesCount',
         count(*)

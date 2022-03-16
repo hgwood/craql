@@ -38,71 +38,29 @@ routes:
     arity: 1
   /articles:
     query: >
-      select
-        title as "articles[#].title",
-        slug as "articles[#].slug",
-        body as "articles[#].body",
-        created_at as "articles[#].createdAt",
-        updated_at as "articles[#].updatedAt",
-        description as "articles[#].description",
-        author.bio as "articles[#].author.bio",
-        author.image as "articles[#].author.image",
-        author.name as "articles[#].author.username",
-        coalesce(article_favorite_count.count, 0) as "articles[#].favoritesCount",
-        follow.follower_id is not null as "articles[#].author.following",
-        favorite.user_id is not null as "articles[#].favorited"
-      from article
-      join "user" as author on author.id = article.author_id
-      left join article_favorite_count on article_favorite_count.article_id = article.id
-      left join "user" as "current_user" on
-        {{#headers.authorization}}"current_user".email = substring(${headers.authorization} from 7){{/headers.authorization}}
-        {{^headers.authorization}}"current_user".email = null{{/headers.authorization}}
-      left join follow on
-        follow.following_id = author.id
-        and follow.follower_id = "current_user".id
-      left join favorite on
-        favorite.article_id = article.id
-        and favorite.user_id = "current_user".id
-      where
-        true
-        {{#query.author}}and author.name = ${query.author}{{/query.author}}
-        {{#query.favorited}}and (select id from "user" where name = ${query.favorited}) = any(article_favorite_count.favoriters){{/query.favorited}}
-      order by article.created_at
-      {{#query.limit}}limit ${query.limit}{{/query.limit}}
-      {{#query.offset}}offset ${query.offset}{{/query.offset}}
-    count: articlesCount
+      select * from "/articles"(
+        {{#headers.authorization}}substring(${headers.authorization} from 7),{{/headers.authorization}}
+        {{^headers.authorization}}null,{{/headers.authorization}}
+        {{#query.author}}${query.author},{{/query.author}}
+        {{^query.author}}null,{{/query.author}}
+        {{#query.favorited}}${query.favorited},{{/query.favorited}}
+        {{^query.favorited}}null,{{/query.favorited}}
+        {{#query.offset}}${query.offset},{{/query.offset}}
+        {{^query.offset}}null,{{/query.offset}}
+        {{#query.limit}}${query.limit}{{/query.limit}}
+        {{^query.limit}}null{{/query.limit}}
+      )
   /articles/feed:
     query: >
-      select
-        title as "articles[#].title",
-        slug as "articles[#].slug",
-        body as "articles[#].body",
-        created_at as "articles[#].createdAt",
-        updated_at as "articles[#].updatedAt",
-        description as "articles[#].description",
-        author.bio as "articles[#].author.bio",
-        author.image as "articles[#].author.image",
-        author.name as "articles[#].author.username",
-        coalesce(article_favorite_count.count, 0) as "articles[#].favoritesCount",
-        follow.follower_id is not null as "articles[#].author.following",
-        favorite.user_id is not null as "articles[#].favorited"
-      from article
-      join "user" as author on author.id = article.author_id
-      left join article_favorite_count on article_favorite_count.article_id = article.id
-      left join "user" as "current_user" on
-        {{#headers.authorization}}"current_user".email = substring(${headers.authorization} from 7){{/headers.authorization}}
-        {{^headers.authorization}}"current_user".email = null{{/headers.authorization}}
-      left join follow on
-        follow.following_id = author.id
-        and follow.follower_id = "current_user".id
-      left join favorite on
-        favorite.article_id = article.id
-        and favorite.user_id = "current_user".id
-      where
-        follow.follower_id is not null
-        {{#query.author}}and author.name = ${query.author}{{/query.author}}
-        {{#query.favorited}}and (select id from "user" where name = ${query.favorited}) = any(article_favorite_count.favoriters){{/query.favorited}}
-      order by article.created_at
-      {{#query.limit}}limit ${query.limit}{{/query.limit}}
-      {{#query.offset}}offset ${query.offset}{{/query.offset}}
-    count: articlesCount
+      select * from "/articles"(
+        {{#headers.authorization}}substring(${headers.authorization} from 7),{{/headers.authorization}}
+        {{^headers.authorization}}null,{{/headers.authorization}}
+        {{#query.author}}${query.author},{{/query.author}}
+        {{^query.author}}null,{{/query.author}}
+        {{#query.favorited}}${query.favorited},{{/query.favorited}}
+        {{^query.favorited}}null,{{/query.favorited}}
+        {{#query.offset}}${query.offset},{{/query.offset}}
+        {{^query.offset}}null,{{/query.offset}}
+        {{#query.limit}}${query.limit}{{/query.limit}}
+        {{^query.limit}}null{{/query.limit}}
+      )

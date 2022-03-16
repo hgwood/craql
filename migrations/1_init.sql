@@ -181,6 +181,34 @@ create function "/articles" (
   language sql
   stable;
 
+create function "/articles/feed" (
+  requesting_user_email text,
+  "offset" bigint,
+  "limit" bigint
+)
+  returns json
+  as $$
+    select
+      json_build_object(
+        'articles',
+        json_agg(
+          (article).as_json
+        ),
+        'articlesCount',
+        count(*)
+      )
+    from articles_for_user(
+      (select id from "user" where email = requesting_user_email),
+      null,
+      null,
+      "offset",
+      "limit"
+    ) as article
+    where article.author_followed = true
+  $$
+  language sql
+  stable;
+
 delete from article;
 delete from "user";
 

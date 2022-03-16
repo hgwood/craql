@@ -1,6 +1,7 @@
 drop function if exists "/articles/feed";
 drop function if exists "/articles";
 drop function if exists as_json(article_for_user);
+drop function if exists articles_for_user_as_json;
 drop function if exists articles_for_user;
 drop type article_for_user;
 drop view if exists article_favorite_count;
@@ -153,12 +154,8 @@ create function as_json (
   language sql
   stable;
 
-create function "/articles" (
-  requesting_user_email text,
-  filter_by_author_name text,
-  filter_by_favoriter_name text,
-  "offset" bigint,
-  "limit" bigint
+create function articles_for_user_as_json (
+  articles article_for_user[]
 )
   returns json
   as $$
@@ -174,6 +171,22 @@ create function "/articles" (
         'articlesCount',
         count(*)
       )
+    from unnest(articles) as article
+  $$
+  language sql
+  stable;
+
+create function "/articles" (
+  requesting_user_email text,
+  filter_by_author_name text,
+  filter_by_favoriter_name text,
+  "offset" bigint,
+  "limit" bigint
+)
+  returns json
+  as $$
+    select
+      articles_for_user_as_json(array_agg(article))
     from articles_for_user(
       (select id from "user" where email = requesting_user_email),
       filter_by_author_name,
@@ -193,17 +206,7 @@ create function "/articles/feed" (
   returns json
   as $$
     select
-      json_build_object(
-        'articles',
-        coalesce(
-          json_agg(
-            (article).as_json
-          ),
-          json_build_array()
-        ),
-        'articlesCount',
-        count(*)
-      )
+      articles_for_user_as_json(array_agg(article))
     from articles_for_user(
       (select id from "user" where email = requesting_user_email),
       null,

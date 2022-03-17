@@ -57,3 +57,7 @@ Authorization: Token alice@example.com
 
 GET http://localhost:8788/articles/feed
 Authorization: Token bob@example.com
+
+###
+
+GET http://localhost:8788/articles/feed

@@ -39,24 +39,16 @@ routes:
   /articles:
     query: >
       select * from "/articles"(
-        {{#headers.authorization}}substring(${headers.authorization} from 7),{{/headers.authorization}}
-        {{^headers.authorization}}null,{{/headers.authorization}}
-        {{#query.author}}${query.author},{{/query.author}}
-        {{^query.author}}null,{{/query.author}}
-        {{#query.favorited}}${query.favorited},{{/query.favorited}}
-        {{^query.favorited}}null,{{/query.favorited}}
-        {{#query.offset}}${query.offset},{{/query.offset}}
-        {{^query.offset}}null,{{/query.offset}}
-        {{#query.limit}}${query.limit}{{/query.limit}}
-        {{^query.limit}}null{{/query.limit}}
+        substring(${headers.authorization} from 7),
+        ${query.author},
+        ${query.favorited},
+        ${query.offset},
+        ${query.limit}
       )
   /articles/feed:
     query: >
       select * from "/articles/feed"(
-        {{#headers.authorization}}substring(${headers.authorization} from 7),{{/headers.authorization}}
-        {{^headers.authorization}}null,{{/headers.authorization}}
-        {{#query.offset}}${query.offset},{{/query.offset}}
-        {{^query.offset}}null,{{/query.offset}}
-        {{#query.limit}}${query.limit}{{/query.limit}}
-        {{^query.limit}}null{{/query.limit}}
+        substring(${headers.authorization} from 7),
+        ${query.offset},
+        ${query.limit}
       )

@@ -63,7 +63,16 @@ async function main() {
           };
           const mustacheQuery = mustache.render(route.query, templateVars);
           console.log({ mustacheQuery });
-          queryResult = await db.result(mustacheQuery, templateVars);
+          queryResult = await db.tx(async (tx) => {
+            // await tx.query(
+            //   "select set_config('sqlfe.context', '${this:raw}', true);",
+            //   templateVars
+            // );
+            return tx.result(
+              pgp.as.format(mustacheQuery, templateVars, { def: () => null })
+            );
+          });
+          // queryResult = await db.result(mustacheQuery, templateVars);
           // queryResult = await pgPool.query(formattedQuery);
         } catch (err) {
           const [, propertyName] =
@@ -87,6 +96,7 @@ async function main() {
           throw err;
         }
         let responseBody = queryResult?.rows || [];
+        // console.log({ queryResult });
         if (route.select) {
           responseBody = responseBody.map((row) => row[route.select]);
         }

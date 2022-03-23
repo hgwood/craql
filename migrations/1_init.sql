@@ -1,3 +1,84 @@
+-- jwt
+
+drop function if exists craft_jwt(bigint);
+drop function if exists now_epoch();
+drop function if exists json_stringify(json);
+drop function if exists encode_base64_url(bytea);
+
+create extension if not exists pgcrypto;
+
+create function encode_base64_url(content bytea) returns text as $$
+  select
+    rtrim(
+      replace(
+        replace(
+          translate( -- see https://stackoverflow.com/questions/53710378/stop-postgresql-from-spliting-values-in-multiple-lines
+            encode(content, 'base64'),
+            E'\n',
+            ''
+          ),
+          '+',
+          '-'
+        ),
+        '/',
+        '_'
+      ),
+      '='
+    )
+$$ language sql immutable;
+
+create function json_stringify(content json) returns text as $$
+  select regexp_replace(content::text, '\s+', '', 'g')
+$$ language sql immutable;
+
+create function now_epoch() returns bigint as $$
+  select extract(epoch from date_trunc('second', current_timestamp))
+$$ language sql stable;
+
+create function craft_jwt(
+  user_id bigint
+) returns text as $$
+  select
+    concat(
+      jwt.payload_to_sign,
+      '.',
+      encode_base64_url(
+        hmac(
+          jwt.payload_to_sign,
+          'fake_secret_please_change_this__',
+          'sha512'
+        )
+      )
+    )
+  from (
+    select
+      concat(
+        encode_base64_url(
+          json_stringify(json_build_object('alg', 'HS512', 'typ', 'JWT'))::bytea
+        ),
+        '.',
+        encode_base64_url(
+          json_stringify(
+            json_build_object(
+              'iss',
+              'https://github.com/hgwood/realworld-conduit-sqlfe',
+              'sub',
+              user_id::text,
+              'iat',
+              now_epoch(),
+              'exp',
+              now_epoch() + 86400,
+              'jti',
+              gen_random_uuid()::text
+            )
+          )::bytea
+        )
+      ) as payload_to_sign
+  ) as jwt
+$$ language sql stable;
+
+-- app
+
 drop function if exists "/articles/feed";
 drop function if exists "/articles";
 drop function if exists as_json(article_for_user);
@@ -218,6 +299,8 @@ create function "/articles/feed" (
   $$
   language sql
   stable;
+
+-- data
 
 delete from article;
 delete from "user";

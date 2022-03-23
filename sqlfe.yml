@@ -9,7 +9,7 @@ routes:
         email as "user.email",
         image as "user.image",
         bio as "user.bio",
-        email as "user.token"
+        craft_jwt(id) as "user.token"
     arity: 1
   /users/login:
     query: >
@@ -18,7 +18,7 @@ routes:
         email as "user.email",
         image as "user.image",
         bio as "user.bio",
-        email as "user.token"
+        craft_jwt(id) as "user.token"
       from "user"
       where
         email = ${body.user.email}

@@ -31,10 +31,10 @@ routes:
         email as "user.email",
         image as "user.image",
         bio as "user.bio",
-        email as "user.token"
+        req_token() as "user.token"
       from "user"
       where
-        email = substring(${headers.authorization} from 7)
+        id = req_user()
     arity: 1
   /articles:
     query: >

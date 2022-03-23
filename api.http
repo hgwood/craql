@@ -22,6 +22,12 @@ Content-Type: application/json
 }
 
 ###
+
+GET http://localhost:8788/user
+Authorization: Token eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2dpdGh1Yi5jb20vaGd3b29kL3JlYWx3b3JsZC1jb25kdWl0LXNxbGZlIiwic3ViIjoiMiIsImlhdCI6MTY0ODA0NDcyOSwiZXhwIjoxNjQ4MTMxMTI5LCJqdGkiOiI4YTAxMjc4OC1kZTE5LTQ1NzEtYTU3Zi05ZjUyOTJlZWQzODcifQ.hALvhzNUwgHM1rk-dibE3cimmvcy8q7z43g_5C4XCMzBmVW31Wayp4kGtYS_CwUqjgnSzcNmQab_kdew2Jd8yQ
+
+###
+
 GET http://localhost:8788/articles
 
 ###

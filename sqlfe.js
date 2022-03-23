@@ -64,10 +64,10 @@ async function main() {
           const mustacheQuery = mustache.render(route.query, templateVars);
           console.log({ mustacheQuery });
           queryResult = await db.tx(async (tx) => {
-            // await tx.query(
-            //   "select set_config('sqlfe.context', '${this:raw}', true);",
-            //   templateVars
-            // );
+            await tx.query(
+              "select set_config('sqlfe.context', '${this:raw}', true);",
+              templateVars
+            );
             return tx.result(
               pgp.as.format(mustacheQuery, templateVars, { def: () => null })
             );

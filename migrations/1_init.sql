@@ -1,8 +1,11 @@
 -- jwt
 
+drop function if exists extract_user_id_from_jwt(text);
+drop function if exists parse_jwt(text);
 drop function if exists craft_jwt(bigint);
 drop function if exists now_epoch();
 drop function if exists json_stringify(json);
+drop function if exists decode_base64_url(text);
 drop function if exists encode_base64_url(bytea);
 
 create extension if not exists pgcrypto;
@@ -25,6 +28,28 @@ create function encode_base64_url(content bytea) returns text as $$
       ),
       '='
     )
+$$ language sql immutable;
+
+create function decode_base64_url(content text) returns text as $$
+  select convert_from(
+    decode(
+      rpad(
+        replace(
+          replace(
+            content,
+            '_',
+            '/'
+          ),
+          '-',
+          '+'
+        ),
+        ((div(char_length(content), 4) + 1) * 4)::int,
+        '='
+      ),
+      'base64'
+    ),
+    'UTF8'
+  )
 $$ language sql immutable;
 
 create function json_stringify(content json) returns text as $$
@@ -75,6 +100,47 @@ create function craft_jwt(
         )
       ) as payload_to_sign
   ) as jwt
+$$ language sql stable;
+
+create function parse_jwt(jwt text) returns json as $$
+  select decode_base64_url(split_part(jwt, '.', 2))::json
+  from (select jwt) as jwt
+  where
+    encode_base64_url(
+      hmac(
+        concat(
+          split_part(jwt, '.', 1),
+          '.',
+          split_part(jwt, '.', 2)
+        ),
+        'fake_secret_please_change_this__',
+        'sha512'
+      )
+    ) = split_part(jwt, '.', 3)
+$$ language sql immutable;
+
+create function extract_user_id_from_jwt(jwt text) returns bigint as $$
+  select (parse_jwt(jwt)->>'sub')::bigint
+$$ language sql immutable;
+
+-- auth
+
+drop function if exists req_user;
+drop function if exists req_token;
+drop function if exists req;
+
+create function req() returns json as $$
+  select current_setting('sqlfe.context')::json
+$$ language sql stable;
+
+
+create function req_token() returns text as $$
+  select
+    substring(req()->'headers'->>'authorization' from 7)
+$$ language sql stable;
+
+create function req_user() returns bigint as $$
+  select extract_user_id_from_jwt(req_token())
 $$ language sql stable;
 
 -- app

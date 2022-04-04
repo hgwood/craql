@@ -95,37 +95,38 @@ async function main() {
           }
           throw err;
         }
-        let responseBody = queryResult?.rows || [];
+        // let responseBody = queryResult?.rows || [];
         // console.log({ queryResult });
-        if (route.select) {
-          responseBody = responseBody.map((row) => row[route.select]);
-        }
-        let needsMerging = false;
-        responseBody = responseBody.map((row, index) => {
-          const result = {};
-          Object.entries(row).forEach(([key, value]) => {
-            const indexAwareKey = key.replaceAll("[#]", `[${index}]`);
-            needsMerging = needsMerging || indexAwareKey !== key;
-            _.set(result, indexAwareKey, value);
-          });
-          return result;
-        });
-        if (needsMerging) {
-          responseBody = _.merge(...responseBody);
-        }
-        if (route.arity === 1) {
-          responseBody = responseBody?.[0];
-          if (!responseBody) {
-            res.writeHead(404);
-            res.end("Not found");
-            return;
-          }
-        }
-        if (route.count) {
-          responseBody[route.count] = queryResult.rowCount;
-        }
-        console.log({ responseBody });
-        res.writeHead(200);
+        // if (route.select) {
+        //   responseBody = responseBody.map((row) => row[route.select]);
+        // }
+        // let needsMerging = false;
+        // responseBody = responseBody.map((row, index) => {
+        //   const result = {};
+        //   Object.entries(row).forEach(([key, value]) => {
+        //     const indexAwareKey = key.replaceAll("[#]", `[${index}]`);
+        //     needsMerging = needsMerging || indexAwareKey !== key;
+        //     _.set(result, indexAwareKey, value);
+        //   });
+        //   return result;
+        // });
+        // if (needsMerging) {
+        //   responseBody = _.merge(...responseBody);
+        // }
+        // if (route.arity === 1) {
+        //   responseBody = responseBody?.[0];
+        //   if (!responseBody) {
+        //     res.writeHead(404);
+        //     res.end("Not found");
+        //     return;
+        //   }
+        // }
+        // if (route.count) {
+        //   responseBody[route.count] = queryResult.rowCount;
+        // }
+        let { status_code: statusCode, body: responseBody, headers } = queryResult?.rows[0] || {};
+        console.log({ statusCode, responseBody, headers });
+        res.writeHead(statusCode, "", headers);
         res.write(pgp.as.json(responseBody, true));
         res.end();
       } catch (err) {

@@ -147,6 +147,7 @@ $$ language sql stable;
 
 drop function if exists "/articles/feed";
 drop function if exists "/articles";
+drop type if exists http_response;
 drop function if exists as_json(article_for_user);
 drop function if exists articles_for_user_as_json;
 drop function if exists articles_for_user;
@@ -323,6 +324,12 @@ create function articles_for_user_as_json (
   language sql
   stable;
 
+create type http_response as (
+  status_code int,
+  headers json,
+  body json
+);
+
 create function "/articles" (
   requesting_user_email text,
   filter_by_author_name text,
@@ -330,9 +337,11 @@ create function "/articles" (
   "offset" bigint,
   "limit" bigint
 )
-  returns json
+  returns http_response
   as $$
     select
+      200,
+      json_build_object('Content-Type', 'application/json'),
       articles_for_user_as_json(array_agg(article))
     from articles_for_user(
       (select id from "user" where email = requesting_user_email),
@@ -350,9 +359,11 @@ create function "/articles/feed" (
   "offset" bigint,
   "limit" bigint
 )
-  returns json
+  returns http_response
   as $$
     select
+      200,
+      json_build_object('Content-Type', 'application/json'),
       articles_for_user_as_json(array_agg(article))
     from articles_for_user(
       (select id from "user" where email = requesting_user_email),

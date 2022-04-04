@@ -75,24 +75,24 @@ async function main() {
           // queryResult = await db.result(mustacheQuery, templateVars);
           // queryResult = await pgPool.query(formattedQuery);
         } catch (err) {
-          const [, propertyName] =
-            err.message.match(/Property '(.*?)' doesn't exist./) || [];
-          if (propertyName) {
-            console.debug(400, err.message);
-            res.writeHead(400);
-            res.end(err.message);
-            return;
-          }
-          const [, contraintName] =
-            err.message.match(
-              /duplicate key value violates unique constraint "(.*?)"/
-            ) || [];
-          if (contraintName) {
-            console.debug(409, err.message);
-            res.writeHead(409);
-            res.end(err.message);
-            return;
-          }
+          // const [, propertyName] =
+          //   err.message.match(/Property '(.*?)' doesn't exist./) || [];
+          // if (propertyName) {
+          //   console.debug(400, err.message);
+          //   res.writeHead(400);
+          //   res.end(err.message);
+          //   return;
+          // }
+          // const [, contraintName] =
+          //   err.message.match(
+          //     /duplicate key value violates unique constraint "(.*?)"/
+          //   ) || [];
+          // if (contraintName) {
+          //   console.debug(409, err.message);
+          //   res.writeHead(409);
+          //   res.end(err.message);
+          //   return;
+          // }
           throw err;
         }
         // let responseBody = queryResult?.rows || [];

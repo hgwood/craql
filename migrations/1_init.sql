@@ -263,6 +263,50 @@ create function articles_for_user (
   language sql
   stable;
 
+create or replace view article_user as (
+  select
+    "user".id as requesting_user_id,
+    -- base article field
+    -- article favorite count
+    -- favorited
+    (
+      select exists (
+        select
+        from favorite
+        where
+          favorite.article_id = article.id
+          and favorite.user_id = "user".id
+      )
+    ) as article_is_a_favorite_of_requesting_user,
+    -- base author fields
+    author.name as author_name,
+    -- followed
+    (
+      select exists (
+        select
+        from follow
+        where
+          follow.following_id = author.id
+          and follow.follower_id = "user".id
+      )
+    ) as requesting_user_follows_author,
+    -- facilitates filtering by favoriter name
+    (
+      select
+        array_agg(favoriter.name)
+      from favorite
+      join "user" as favoriter on favoriter.id = favorite.user_id
+      where favorite.article_id = article.id
+      --group by article.id
+    ) as article_favorited_by_names
+  from article
+  cross join (
+    select * from "user" union all values (null::bigint, null, null, null, null, null)
+  ) as "user"
+  join "user" as author on author.id = article.author_id
+  join article_favorite_count on article_favorite_count.article_id = article.id
+);
+
 create function as_json (
   article article_for_user
 )

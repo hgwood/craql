@@ -15,3 +15,11 @@ HTTP/* 200
 [Asserts]
 jsonpath "$.days['2022-04-01']" == "friendship_magic"
 jsonpath "$.days['2022-04-02']" == "celestia"
+
+## It returns different results for another month
+
+GET http://localhost:8788/timesheets?consultant=TSP&month=2022-03
+HTTP/* 200
+[Asserts]
+jsonpath "$.days['2022-03-01']" == "friendship_magic"
+jsonpath "$.days['2022-03-02']" == "celestia"

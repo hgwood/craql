@@ -11,7 +11,22 @@ create function "/timesheets"() returns http_response
   return row(
       200,
       '{"Content-Type": "application/json"}'::json,
-      (select json_build_object('days', json_object_agg(date, project_id)) from timesheet_day where consultant_id = (current_setting('sqlfe.req')::json)->'query'->>'consultant')
+      (
+        select
+          json_build_object(
+            'days',
+            json_object_agg(date, project_id)
+          )
+        from timesheet_day
+        where
+          consultant_id = (current_setting('sqlfe.req')::json)->'query'->>'consultant'
+          and
+            concat(
+              lpad(extract(year from date)::text, 4, '0'),
+              '-',
+              lpad(extract(month from date)::text, 2, '0')
+            ) = (current_setting('sqlfe.req')::json)->'query'->>'month'
+      )
   );
 
 create table if not exists consultant (
@@ -59,6 +74,8 @@ insert into
   values
     ('2022-04-01', 'RDA', 'eat_cakes'),
     ('2022-04-02', 'RDA', 'race'),
+    ('2022-03-01', 'TSP', 'friendship_magic'),
+    ('2022-03-02', 'TSP', 'celestia'),
     ('2022-04-01', 'TSP', 'friendship_magic'),
     ('2022-04-02', 'TSP', 'celestia')
   on conflict (date, consultant_id)

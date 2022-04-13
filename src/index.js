@@ -1,4 +1,4 @@
-import assert from "assert";
+import { inspect } from "util";
 import http from "http";
 import { readFile } from "fs/promises";
 // import pg from "pg";
@@ -57,7 +57,7 @@ async function main() {
         );
         return tx.one(`select ("${route}"()).*`);
       });
-      console.log({ response });
+      console.log(inspect({ response }, { depth: null, colors: true }));
       res.writeHead(response.status_code, response.headers);
       res.end(JSON.stringify(response.body));
     } catch (err) {

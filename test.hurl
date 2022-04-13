@@ -23,3 +23,10 @@ HTTP/* 200
 [Asserts]
 jsonpath "$.days['2022-03-01']" == "friendship_magic"
 jsonpath "$.days['2022-03-02']" == "celestia"
+
+# It returns an empty object if no days have a project
+
+GET http://localhost:8788/timesheets?consultant=RDA&month=2022-03
+HTTP/* 200
+[Asserts]
+jsonpath "$.days" != null

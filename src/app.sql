@@ -15,7 +15,7 @@ create function "/timesheets"() returns http_response
         select
           json_build_object(
             'days',
-            json_object_agg(date, project_id)
+            coalesce(json_object_agg(date, project_id), '{}'::json)
           )
         from timesheet_day
         where

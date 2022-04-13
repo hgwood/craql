@@ -3,8 +3,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "nodemon --require dotenv/config --ext js,yml --inspect sqlfe.js",
-    "migrate": "node --require dotenv/config migrate.js"
+    "dev": "nodemon --require dotenv/config --ext js,sql --inspect src/index.js",
+    "migrate": "node --require dotenv/config migrate.js",
+    "test": "nodemon --ext hurl --exec hurl *.hurl --test"
   },
   "dependencies": {
     "lodash": "4.17.21",

@@ -7,27 +7,8 @@ create type http_response as (
   body json
 );
 
-create function "/timesheets"() returns http_response
-  return row(
-      200,
-      '{"Content-Type": "application/json"}'::json,
-      (
-        select
-          json_build_object(
-            'days',
-            coalesce(json_object_agg(date, project_id), '{}'::json)
-          )
-        from timesheet_day
-        where
-          consultant_id = (current_setting('sqlfe.req')::json)->'query'->>'consultant'
-          and
-            concat(
-              lpad(extract(year from date)::text, 4, '0'),
-              '-',
-              lpad(extract(month from date)::text, 2, '0')
-            ) = (current_setting('sqlfe.req')::json)->'query'->>'month'
-      )
-  );
+drop function if exists req();
+create function req() returns json return current_setting('sqlfe.req')::json;
 
 create table if not exists consultant (
   id char(3) primary key,
@@ -39,10 +20,15 @@ create table if not exists project (
   name text not null
 );
 
+drop function if exists iso_month(date) cascade;
+create function iso_month(date) returns text immutable return to_char($1, 'IYYY-MM');
+
+drop table timesheet_day;
 create table if not exists timesheet_day (
   date date not null,
   consultant_id char(3) not null references consultant (id),
   project_id text not null references project (id),
+  iso_month text not null generated always as (iso_month(date)) stored,
   primary key (consultant_id, date)
 );
 
@@ -80,3 +66,26 @@ insert into
     ('2022-04-02', 'TSP', 'celestia')
   on conflict (date, consultant_id)
     do update set project_id = excluded.project_id;
+
+create function get_timesheet(consultant.id%type, timesheet_day.iso_month%type) returns setof timesheet_day
+  begin atomic
+    select *
+    from timesheet_day
+    where
+      consultant_id = $1
+      and iso_month = $2;
+  end;
+
+create function "/timesheets"() returns http_response
+  return row(
+    200,
+    '{"Content-Type": "application/json"}'::json,
+    (
+      select
+        json_build_object(
+          'days',
+          coalesce(json_object_agg(date, project_id), '{}'::json)
+        )
+      from get_timesheet(req()->'query'->>'consultant', req()->'query'->>'month')
+    )
+  );

@@ -79,11 +79,20 @@ create type http_response as (
   body json
 );
 
+
+drop function if exists ok(http_response) cascade;
+create function ok(body json = json_build_object()) returns http_response immutable
+  return row(200, json_build_object('Content-Type', 'application/json'), body);
+
+drop function if exists bad_request(http_response) cascade;
+create function bad_request() returns http_response immutable
+  return row(400, json_build_object('Content-Type', 'application/json'), json_build_object());
+
 drop function if exists req() cascade;
 create function req() returns json return current_setting('sqlfe.req')::json;
 
 drop function if exists req_query_param(text);
-create function req_query_param(name text) returns text
+create function req_query_param(name text) returns text stable
   return req()->'query'->>name;
 
 -- http endpoints
@@ -96,25 +105,17 @@ create function "/timesheets"() returns http_response
         req_query_param('consultant') is not null
         and req_query_param('month') is not null
       then
-        row(
-          200,
-          '{"Content-Type": "application/json"}'::json,
-          (
-            select
-              json_build_object(
-                'days',
-                coalesce(json_object_agg(date, project_id), '{}'::json)
-              )
-            from get_timesheet(
-              req_query_param('consultant'),
-              req_query_param('month')
+        ok((
+          select
+            json_build_object(
+              'days',
+              coalesce(json_object_agg(date, project_id), '{}'::json)
             )
+          from get_timesheet(
+            req_query_param('consultant'),
+            req_query_param('month')
           )
-        )::http_response
+        ))
       else
-        row(
-          400,
-          '{"Content-Type": "application/json"}'::json,
-          '{}'::json
-        )::http_response
+        bad_request()
     end;

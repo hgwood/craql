@@ -1,14 +1,4 @@
-drop function if exists "/timesheets"();
-
-drop type if exists http_response cascade;
-create type http_response as (
-  status_code int,
-  headers json,
-  body json
-);
-
-drop function if exists req();
-create function req() returns json return current_setting('sqlfe.req')::json;
+-- data schema
 
 create table if not exists consultant (
   id char(3) primary key,
@@ -20,17 +10,15 @@ create table if not exists project (
   name text not null
 );
 
-drop function if exists iso_month(date) cascade;
-create function iso_month(date) returns text immutable return to_char($1, 'IYYY-MM');
-
-drop table timesheet_day;
+drop table timesheet_day cascade;
 create table if not exists timesheet_day (
   date date not null,
   consultant_id char(3) not null references consultant (id),
   project_id text not null references project (id),
-  iso_month text not null generated always as (iso_month(date)) stored,
   primary key (consultant_id, date)
 );
+
+-- sample data
 
 insert into
   consultant (id, name)
@@ -67,15 +55,36 @@ insert into
   on conflict (date, consultant_id)
     do update set project_id = excluded.project_id;
 
-create function get_timesheet(consultant.id%type, timesheet_day.iso_month%type) returns setof timesheet_day
+-- business logic
+
+drop function if exists compose_iso_month(date) cascade;
+create function compose_iso_month(date) returns text immutable
+  return to_char($1, 'IYYY-MM');
+
+create function get_timesheet(consultant.id%type, iso_month text) returns setof timesheet_day
   begin atomic
     select *
     from timesheet_day
     where
       consultant_id = $1
-      and iso_month = $2;
+      and compose_iso_month(date) = $2;
   end;
 
+-- http utils
+
+drop type if exists http_response cascade;
+create type http_response as (
+  status_code int,
+  headers json,
+  body json
+);
+
+drop function if exists req();
+create function req() returns json return current_setting('sqlfe.req')::json;
+
+-- http endpoints
+
+drop function if exists "/timesheets"();
 create function "/timesheets"() returns http_response
   return
     case

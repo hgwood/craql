@@ -61,7 +61,7 @@ drop function if exists compose_iso_month(date) cascade;
 create function compose_iso_month(date) returns text immutable
   return to_char($1, 'IYYY-MM');
 
-create function get_timesheet(consultant.id%type, iso_month text) returns setof timesheet_day
+create function get_timesheet(consultant.id%type, iso_month text) returns setof timesheet_day stable
   begin atomic
     select *
     from timesheet_day
@@ -79,7 +79,6 @@ create type http_response as (
   body json
 );
 
-
 drop function if exists ok(http_response) cascade;
 create function ok(body json = json_build_object()) returns http_response immutable
   return row(200, json_build_object('Content-Type', 'application/json'), body);
@@ -89,7 +88,8 @@ create function bad_request() returns http_response immutable
   return row(400, json_build_object('Content-Type', 'application/json'), json_build_object());
 
 drop function if exists req() cascade;
-create function req() returns json return current_setting('sqlfe.req')::json;
+create function req() returns json stable
+  return current_setting('sqlfe.req')::json;
 
 drop function if exists req_query_param(text);
 create function req_query_param(name text) returns text stable
@@ -98,7 +98,7 @@ create function req_query_param(name text) returns text stable
 -- http endpoints
 
 drop function if exists "/timesheets"();
-create function "/timesheets"() returns http_response
+create function "/timesheets"() returns http_response stable
   return
     case
       when

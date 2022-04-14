@@ -1,5 +1,17 @@
 # I want to see what project a consultant has worked on for each day of a month, aka their timesheet for that month
 
+## It returns 200
+
+GET http://localhost:8788/timesheets?consultant=RDA&month=2022-04
+HTTP/* 200
+
+## It returns JSON
+
+GET http://localhost:8788/timesheets?consultant=RDA&month=2022-04
+HTTP/* 200
+[Asserts]
+header "Content-Type" == "application/json"
+
 ## It returns the correct JSON structure
 
 GET http://localhost:8788/timesheets?consultant=RDA&month=2022-04

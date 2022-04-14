@@ -79,8 +79,12 @@ create type http_response as (
   body json
 );
 
-drop function if exists req();
+drop function if exists req() cascade;
 create function req() returns json return current_setting('sqlfe.req')::json;
+
+drop function if exists req_query_param(text);
+create function req_query_param(name text) returns text
+  return req()->'query'->>name;
 
 -- http endpoints
 
@@ -89,8 +93,8 @@ create function "/timesheets"() returns http_response
   return
     case
       when
-        req()->'query'->>'consultant' is not null
-        and req()->'query'->>'month' is not null
+        req_query_param('consultant') is not null
+        and req_query_param('month') is not null
       then
         row(
           200,
@@ -101,7 +105,10 @@ create function "/timesheets"() returns http_response
                 'days',
                 coalesce(json_object_agg(date, project_id), '{}'::json)
               )
-            from get_timesheet(req()->'query'->>'consultant', req()->'query'->>'month')
+            from get_timesheet(
+              req_query_param('consultant'),
+              req_query_param('month')
+            )
           )
         )::http_response
       else

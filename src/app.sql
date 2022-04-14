@@ -1,6 +1,6 @@
 drop function if exists "/timesheets"();
-drop type if exists http_response;
 
+drop type if exists http_response cascade;
 create type http_response as (
   status_code int,
   headers json,
@@ -77,15 +77,28 @@ create function get_timesheet(consultant.id%type, timesheet_day.iso_month%type) 
   end;
 
 create function "/timesheets"() returns http_response
-  return row(
-    200,
-    '{"Content-Type": "application/json"}'::json,
-    (
-      select
-        json_build_object(
-          'days',
-          coalesce(json_object_agg(date, project_id), '{}'::json)
-        )
-      from get_timesheet(req()->'query'->>'consultant', req()->'query'->>'month')
-    )
-  );
+  return
+    case
+      when
+        req()->'query'->>'consultant' is not null
+        and req()->'query'->>'month' is not null
+      then
+        row(
+          200,
+          '{"Content-Type": "application/json"}'::json,
+          (
+            select
+              json_build_object(
+                'days',
+                coalesce(json_object_agg(date, project_id), '{}'::json)
+              )
+            from get_timesheet(req()->'query'->>'consultant', req()->'query'->>'month')
+          )
+        )::http_response
+      else
+        row(
+          400,
+          '{"Content-Type": "application/json"}'::json,
+          '{}'::json
+        )::http_response
+    end;

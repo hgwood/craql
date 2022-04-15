@@ -4,6 +4,7 @@ import { readFile } from "fs/promises";
 // import pg from "pg";
 import pgPromise from "pg-promise";
 import streamConsumers from "stream/consumers";
+import assert from "assert";
 
 const dbConnection = {
   host: process.env.PGHOST,
@@ -21,6 +22,18 @@ async function main() {
   const db = pgp(dbConnection);
   // const pgPool = new pg.Pool();
   await db.any((await readFile("./src/app.sql")).toString());
+  try {
+    await db.any((await readFile("./src/test.sql")).toString());
+  } catch (err) {
+    if (err.constraint === "assert_equals_int_check") {
+      const [, actual, expected] =
+        err.detail?.match(/^Failing row contains \((.*), (.*)\)\.$/) || [];
+      console.log({ err, actual, expected });
+      assert.equal(actual, expected);
+    } else {
+      throw err;
+    }
+  }
   const routes = await fetchRoutes(db);
 
   const server = http.createServer(async (req, res) => {
@@ -30,7 +43,7 @@ async function main() {
       const route = routes.find(
         ({ method, path }) => path === reqUrl.pathname && method === req.method
       );
-      console.log({route, method: req.method, path: reqUrl.pathname});
+      console.log({ route, method: req.method, path: reqUrl.pathname });
       if (!route) {
         res.writeHead(404);
         res.end();
@@ -55,7 +68,7 @@ async function main() {
         headers: req.headers,
         query: Object.fromEntries(reqUrl.searchParams.entries()),
       };
-      console.log({sqlfeReq})
+      console.log({ sqlfeReq });
       const response = await db.tx(async (tx) => {
         await tx.query(
           "select set_config('sqlfe.req', '${this:raw}', true);",

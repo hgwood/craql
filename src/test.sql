@@ -73,4 +73,10 @@ insert into assert_equals_int
   from compose_project_summary('2019-01')
   where project_id = 'eat_cakes';
 
+
+select change_timesheet('RDA', '2019-01', 'friendship_magic');
+
+insert into assert
+  select is_timesheet_complete('RDA', '2019-01');
+
 rollback;

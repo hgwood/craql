@@ -65,9 +65,26 @@ drop function if exists compose_start_of_iso_month(text) cascade;
 create function compose_start_of_iso_month(iso_month text) returns date immutable
   return to_date(iso_month, 'YYYY-MM');
 
+drop function if exists compose_last_day_of_iso_month(text) cascade;
+create function compose_last_day_of_iso_month(iso_month text) returns date immutable
+  return compose_start_of_iso_month(iso_month) + (interval '1 month - 1 day');
+
+drop function if exists compose_number_of_days_in_month(text) cascade;
+create function compose_number_of_days_in_month(iso_month text) returns int immutable
+  return extract(days from compose_last_day_of_iso_month(iso_month));
+
 create function get_timesheet(timesheet_day.consultant_id%type, iso_month text) returns setof timesheet_day stable
   begin atomic
     select *
+    from timesheet_day
+    where
+      consultant_id = $1
+      and compose_iso_month(date) = iso_month;
+  end;
+
+create function is_timesheet_complete(timesheet_day.consultant_id%type, iso_month text) returns boolean stable
+  begin atomic
+    select count(*) = compose_number_of_days_in_month(iso_month)
     from timesheet_day
     where
       consultant_id = $1
@@ -96,7 +113,7 @@ create or replace function change_timesheet(timesheet_day.consultant_id%type, is
       from
         generate_series(
           compose_start_of_iso_month(iso_month)::timestamp,
-          compose_start_of_iso_month(iso_month)::timestamp + (interval '1 month' - interval '1 day'),
+          compose_last_day_of_iso_month(iso_month)::timestamp,
           interval '1 day'
         ) date
       on conflict (consultant_id, date) do update set project_id = excluded.project_id
@@ -157,7 +174,12 @@ create function "GET /timesheets"() returns http_response stable
           select
             json_build_object(
               'days',
-              coalesce(json_object_agg(date, project_id), '{}'::json)
+              coalesce(json_object_agg(date, project_id), '{}'::json),
+              'complete',
+              is_timesheet_complete(
+                req_query_param('consultant'),
+                req_query_param('month')
+              )
             )
           from get_timesheet(
             req_query_param('consultant'),

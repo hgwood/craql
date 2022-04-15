@@ -59,7 +59,11 @@ insert into
 
 drop function if exists compose_iso_month(date) cascade;
 create function compose_iso_month(date) returns text immutable
-  return to_char($1, 'IYYY-MM');
+  return to_char($1, 'YYYY-MM');
+
+drop function if exists compose_start_of_iso_month(text) cascade;
+create function compose_start_of_iso_month(iso_month text) returns date immutable
+  return to_date(iso_month, 'YYYY-MM');
 
 create function get_timesheet(timesheet_day.consultant_id%type, iso_month text) returns setof timesheet_day stable
   begin atomic
@@ -76,6 +80,25 @@ create or replace function change_timesheet(timesheet_day.consultant_id%type, ti
     insert into timesheet_day
       (consultant_id, date, project_id)
       values ($1, $2, $3)
+      on conflict (consultant_id, date) do update set project_id = excluded.project_id
+      returning *;
+  end;
+
+drop function if exists change_timesheet(timesheet_day.consultant_id%type, iso_month text, timesheet_day.project_id%type);
+create or replace function change_timesheet(timesheet_day.consultant_id%type, iso_month text, timesheet_day.project_id%type) returns timesheet_day
+  begin atomic
+    insert into timesheet_day
+      (consultant_id, date, project_id)
+      select
+        $1,
+        date::date,
+        $3
+      from
+        generate_series(
+          compose_start_of_iso_month(iso_month)::timestamp,
+          compose_start_of_iso_month(iso_month)::timestamp + (interval '1 month' - interval '1 day'),
+          interval '1 day'
+        ) date
       on conflict (consultant_id, date) do update set project_id = excluded.project_id
       returning *;
   end;
@@ -159,6 +182,20 @@ create or replace function "POST /timesheets"() returns http_response volatile
             change_timesheet(
               req_body()->>'consultant',
               (req_body()->>'date')::date,
+              req_body()->>'project'
+            )
+          )
+        )
+      when
+        req_body()->>'consultant' is not null
+        and req_body()->>'month' is not null
+        and req_body()->>'project' is not null
+      then
+        ok(
+          to_json(
+            change_timesheet(
+              req_body()->>'consultant',
+              req_body()->>'month',
               req_body()->>'project'
             )
           )

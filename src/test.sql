@@ -11,9 +11,25 @@ create temporary table if not exists assert_equals_int (
 
 begin;
 
+
 delete from timesheet_day;
 delete from consultant;
 delete from project;
+
+-- with
+--   consultant as (insert into consultant (id, name) values ('RDA', '') returning *),
+--   project as (insert into project (id, name) values ('eat_cakes', '') returning *),
+--   timesheet_day as (
+--     insert into timesheet_day
+--       (consultant_id, date, project_id)
+--       select consultant.id, '2019-01-01', project.id
+--       from consultant, project
+--       returning *
+--   )
+--   insert into assert_equals_int
+--   select number_of_days, 1
+--   from compose_project_summary('2019-01')
+--   where project_id = 'eat_cakes';
 
 insert into consultant (id, name) values ('RDA', '');
 insert into project (id, name) values ('eat_cakes', '');

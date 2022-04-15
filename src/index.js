@@ -3,6 +3,7 @@ import http from "http";
 import { readFile } from "fs/promises";
 // import pg from "pg";
 import pgPromise from "pg-promise";
+import streamConsumers from "stream/consumers";
 
 const dbConnection = {
   host: process.env.PGHOST,
@@ -26,7 +27,10 @@ async function main() {
     // const client = await pgPool.connect();
     try {
       const reqUrl = new URL(req.url, "http://localhost");
-      const route = routes.find((route) => route === reqUrl.pathname);
+      const route = routes.find(
+        ({ method, path }) => path === reqUrl.pathname && method === req.method
+      );
+      console.log({route, method: req.method, path: reqUrl.pathname});
       if (!route) {
         res.writeHead(404);
         res.end();
@@ -40,6 +44,7 @@ async function main() {
         try {
           body = await streamConsumers.json(req);
         } catch (err) {
+          console.error(err);
           res.writeHead(400);
           res.end(err.message);
           return;
@@ -50,12 +55,14 @@ async function main() {
         headers: req.headers,
         query: Object.fromEntries(reqUrl.searchParams.entries()),
       };
+      console.log({sqlfeReq})
       const response = await db.tx(async (tx) => {
         await tx.query(
           "select set_config('sqlfe.req', '${this:raw}', true);",
           sqlfeReq
         );
-        return tx.one(`select ("${route}"()).*`);
+        console.log(`Running`, route.functionName);
+        return tx.one(`select ("${route.functionName}"()).*`);
       });
       console.log(inspect({ response }, { depth: null, colors: true }));
       res.writeHead(response.status_code, response.headers);
@@ -70,15 +77,21 @@ async function main() {
   });
   server.listen(port, () => {
     console.log(`Listening on port ${port}`);
-    console.log(`Available routes: ${routes.join(", ")}`);
+    console.log(
+      `Available routes: ${routes
+        .map(({ functionName }) => functionName)
+        .join(", ")}`
+    );
   });
 }
 
 async function fetchRoutes(pgClient) {
   const routes = await pgClient.many(
-    "select routine_name from information_schema.routines where routine_name like '/%'"
+    "select routine_name from information_schema.routines where routine_name similar to '(GET|POST) /%'"
   );
-  return routes.map(({ routine_name }) => routine_name);
+  return routes
+    .map(({ routine_name }) => routine_name.match(/^(GET|POST) (\/.*)$/))
+    .map(([functionName, method, path]) => ({ functionName, method, path }));
 }
 
 main().catch(console.error);

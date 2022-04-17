@@ -165,8 +165,18 @@ create function "GET /timesheets"(req http_request) returns http_response stable
   return
     case
       when
-        req.query->>'consultant' is not null
-        and req.query->>'month' is not null
+        req.query->>'month' is not null
+        and (
+          (
+            req.headers->>'x-sqlfe-user-id' is not null
+            and (req.query->>'consultant' is null or req.query->>'consultant' = req.headers->>'x-sqlfe-user-id')
+          )
+          or
+          (
+            req.headers->>'x-sqlfe-user-id' is null
+            and req.query->>'consultant' is not null
+          )
+        )
       then
         ok((
           select
@@ -175,12 +185,12 @@ create function "GET /timesheets"(req http_request) returns http_response stable
               coalesce(json_object_agg(date, project_id), '{}'::json),
               'complete',
               is_timesheet_complete(
-                req.query->>'consultant',
+                coalesce(req.headers->>'x-sqlfe-user-id', req.query->>'consultant'),
                 req.query->>'month'
               )
             )
           from get_timesheet(
-            req.query->>'consultant',
+            coalesce(req.headers->>'x-sqlfe-user-id', req.query->>'consultant'),
             req.query->>'month'
           )
         ))

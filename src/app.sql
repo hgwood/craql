@@ -179,20 +179,20 @@ create function "GET /timesheets"(req http_request) returns http_response stable
         )
       then
         ok((
-          select
-            json_build_object(
-              'days',
-              coalesce(json_object_agg(date, project_id), '{}'::json),
-              'complete',
-              is_timesheet_complete(
-                coalesce(req.headers->>'x-sqlfe-user-id', req.query->>'consultant'),
-                req.query->>'month'
-              )
+          with
+            timesheet (days, complete) as (
+              select
+                coalesce(json_object_agg(date, project_id), json_build_object()),
+                -- NOTE: 'complete' is a single value so it is either true for all
+                -- rows or false for all rows but it needs to be wrapped in
+                -- aggregation function anyway
+                every(complete)
+              from
+                coalesce(req.headers->>'x-sqlfe-user-id', req.query->>'consultant') as consultant_id,
+                is_timesheet_complete(consultant_id, req.query->>'month') as complete,
+                get_timesheet(consultant_id, req.query->>'month')
             )
-          from get_timesheet(
-            coalesce(req.headers->>'x-sqlfe-user-id', req.query->>'consultant'),
-            req.query->>'month'
-          )
+          select to_json(timesheet.*) from timesheet
         ))
       else
         bad_request()

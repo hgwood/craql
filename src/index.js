@@ -70,12 +70,16 @@ async function main() {
       };
       console.log({ sqlfeReq });
       const response = await db.tx(async (tx) => {
-        await tx.query(
-          "select set_config('sqlfe.req', '${this:raw}', true);",
-          sqlfeReq
-        );
         console.log(`Running`, route.functionName);
-        return tx.one(`select ("${route.functionName}"()).*`);
+        return tx.one(`select ($(functionName:name)(row($(url), $(pathname), $(query:json), $(method), $(headers:json), $(body:json)))).*`, {
+          functionName: route.functionName,
+          url: reqUrl.toString(),
+          pathname: reqUrl.pathname,
+          query: sqlfeReq.query,
+          method: req.method,
+          headers: sqlfeReq.headers,
+          body: sqlfeReq.body,
+        });
       });
       console.log(inspect({ response }, { depth: null, colors: true }));
       res.writeHead(response.status_code, response.headers);

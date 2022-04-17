@@ -133,6 +133,16 @@ create function compose_project_summary(iso_month text) returns table (project_i
 
 -- http utils
 
+drop type if exists http_request cascade;
+create type http_request as (
+  url text,
+  pathname text,
+  query json,
+  method text,
+  headers json,
+  body json
+);
+
 drop type if exists http_response cascade;
 create type http_response as (
   status_code int,
@@ -148,27 +158,15 @@ drop function if exists bad_request(http_response) cascade;
 create function bad_request() returns http_response immutable
   return row(400, json_build_object('Content-Type', 'application/json'), json_build_object());
 
-drop function if exists req() cascade;
-create function req() returns json stable
-  return current_setting('sqlfe.req')::json;
-
-drop function if exists req_query_param(text);
-create function req_query_param(name text) returns text stable
-  return req()->'query'->>name;
-
-drop function if exists req_body();
-create function req_body() returns json stable
-  return req()->'body';
-
 -- http endpoints
 
-drop function if exists "GET /timesheets"();
-create function "GET /timesheets"() returns http_response stable
+drop function if exists "GET /timesheets"(http_request);
+create function "GET /timesheets"(req http_request) returns http_response stable
   return
     case
       when
-        req_query_param('consultant') is not null
-        and req_query_param('month') is not null
+        req.query->>'consultant' is not null
+        and req.query->>'month' is not null
       then
         ok((
           select
@@ -177,48 +175,48 @@ create function "GET /timesheets"() returns http_response stable
               coalesce(json_object_agg(date, project_id), '{}'::json),
               'complete',
               is_timesheet_complete(
-                req_query_param('consultant'),
-                req_query_param('month')
+                req.query->>'consultant',
+                req.query->>'month'
               )
             )
           from get_timesheet(
-            req_query_param('consultant'),
-            req_query_param('month')
+            req.query->>'consultant',
+            req.query->>'month'
           )
         ))
       else
         bad_request()
     end;
 
-drop function if exists "POST /timesheets"();
-create or replace function "POST /timesheets"() returns http_response volatile
+drop function if exists "POST /timesheets"(req http_request);
+create or replace function "POST /timesheets"(req http_request) returns http_response volatile
   return
     case
       when
-        req_body()->>'consultant' is not null
-        and req_body()->>'date' is not null
-        and req_body()->>'project' is not null
+        req.body->>'consultant' is not null
+        and req.body->>'date' is not null
+        and req.body->>'project' is not null
       then
         ok(
           to_json(
             change_timesheet(
-              req_body()->>'consultant',
-              (req_body()->>'date')::date,
-              req_body()->>'project'
+              req.body->>'consultant',
+              (req.body->>'date')::date,
+              req.body->>'project'
             )
           )
         )
       when
-        req_body()->>'consultant' is not null
-        and req_body()->>'month' is not null
-        and req_body()->>'project' is not null
+        req.body->>'consultant' is not null
+        and req.body->>'month' is not null
+        and req.body->>'project' is not null
       then
         ok(
           to_json(
             change_timesheet(
-              req_body()->>'consultant',
-              req_body()->>'month',
-              req_body()->>'project'
+              req.body->>'consultant',
+              req.body->>'month',
+              req.body->>'project'
             )
           )
         )
@@ -226,19 +224,19 @@ create or replace function "POST /timesheets"() returns http_response volatile
         bad_request()
     end;
 
-drop function if exists "GET /projects"();
-create or replace function "GET /projects"() returns http_response volatile
+drop function if exists "GET /projects"(req http_request);
+create or replace function "GET /projects"(req http_request) returns http_response volatile
   return
     case
       when
-        req_query_param('month') is not null
+        req.query->>'month' is not null
       then
         ok((
           select
             json_object_agg(project_id, number_of_days)
           from
             compose_project_summary(
-              req_query_param('month')
+              req.query->>'month'
             )
         ))
       else

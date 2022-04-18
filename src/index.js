@@ -120,12 +120,13 @@ async function main() {
 }
 
 async function fetchRoutes(pgClient) {
-  const routes = await pgClient.many(
-    "select routine_name from information_schema.routines where routine_name similar to '(GET|POST) /%'"
-  );
-  return routes
-    .map(({ routine_name }) => routine_name.match(/^(GET|POST) (\/.*)$/))
-    .map(([functionName, method, path]) => ({ functionName, method, path }));
+  const routes = await pgClient.many("select * from get_endpoints()");
+  console.log(routes);
+  return routes.map(({ function_name: functionName, method, path }) => ({
+    functionName,
+    method,
+    path,
+  }));
 }
 
 main().catch(console.error);

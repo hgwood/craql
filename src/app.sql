@@ -260,3 +260,16 @@ create or replace function "GET /projects"(req http_request) returns http_respon
       else
         bad_request()
     end;
+
+drop function if exists get_endpoints();
+create function get_endpoints() returns table (function_name text, method text, path text) stable
+  begin atomic
+    select
+      routine_name,
+      endpoint_info[1],
+      endpoint_info[2]
+    from
+      information_schema.routines,
+      regexp_match(routine_name, '^(GET|POST) (/.*)$') as endpoint_info
+    where endpoint_info is not null;
+  end;

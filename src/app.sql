@@ -186,7 +186,7 @@ create function "GET /timesheets"(req http_request) returns http_response stable
                 -- NOTE: 'complete' is a single value so it is either true for all
                 -- rows or false for all rows but it needs to be wrapped in
                 -- aggregation function anyway
-                every(complete)
+                coalesce(every(complete), false)
               from
                 coalesce(req.headers->>'x-sqlfe-user-id', req.query->>'consultant') as consultant_id,
                 is_timesheet_complete(consultant_id, req.query->>'month') as complete,

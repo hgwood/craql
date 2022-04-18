@@ -17,6 +17,21 @@ create table if not exists timesheet_day (
   project_id text not null references project (id),
   primary key (consultant_id, date)
 );
+alter table timesheet_day enable row level security;
+
+-- permissions
+
+drop role if exists consultant;
+create role consultant nologin;
+grant consultant to postgres;
+grant select on timesheet_day to consultant;
+
+create policy consultants_only_see_their_own_timesheet
+  on timesheet_day
+  as permissive
+  for all
+  to consultant
+  using (consultant_id = (current_setting('sqlfe.req', true)::json)->'headers'->>'x-sqlfe-user-id');
 
 -- sample data
 
@@ -167,15 +182,8 @@ create function "GET /timesheets"(req http_request) returns http_response stable
       when
         req.query->>'month' is not null
         and (
-          (
-            req.headers->>'x-sqlfe-user-id' is not null
-            and (req.query->>'consultant' is null or req.query->>'consultant' = req.headers->>'x-sqlfe-user-id')
-          )
-          or
-          (
-            req.headers->>'x-sqlfe-user-id' is null
-            and req.query->>'consultant' is not null
-          )
+          req.headers->>'x-sqlfe-user-id' is not null
+          or req.query->>'consultant' is not null
         )
       then
         ok((
@@ -188,7 +196,7 @@ create function "GET /timesheets"(req http_request) returns http_response stable
                 -- aggregation function anyway
                 coalesce(every(complete), false)
               from
-                coalesce(req.headers->>'x-sqlfe-user-id', req.query->>'consultant') as consultant_id,
+                coalesce(req.query->>'consultant', req.headers->>'x-sqlfe-user-id') as consultant_id,
                 is_timesheet_complete(consultant_id, req.query->>'month') as complete,
                 get_timesheet(consultant_id, req.query->>'month')
             )

@@ -72,38 +72,44 @@ insert into
 
 -- business logic
 
-drop function if exists compose_iso_month(date) cascade;
-create function compose_iso_month(date) returns text immutable
-  return to_char($1, 'YYYY-MM');
+drop type if exists year_month cascade;
+create type year_month as (year int, month int);
 
-drop function if exists compose_start_of_iso_month(text) cascade;
-create function compose_start_of_iso_month(iso_month text) returns date immutable
-  return to_date(iso_month, 'YYYY-MM');
+drop function if exists year_month_of(date) cascade;
+create function year_month_of(date) returns year_month
+  return row(
+    extract(year from $1),
+    extract(month from $1)
+  );
 
-drop function if exists compose_last_day_of_iso_month(text) cascade;
-create function compose_last_day_of_iso_month(iso_month text) returns date immutable
-  return compose_start_of_iso_month(iso_month) + (interval '1 month - 1 day');
+drop function if exists first_day_of(year_month) cascade;
+create function first_day_of(year_month) returns date immutable
+  return make_date($1.year, $1.month, 1);
 
-drop function if exists compose_number_of_days_in_month(text) cascade;
-create function compose_number_of_days_in_month(iso_month text) returns int immutable
-  return extract(days from compose_last_day_of_iso_month(iso_month));
+drop function if exists last_day_of(year_month) cascade;
+create function last_day_of(year_month) returns date immutable
+  return first_day_of($1) + (interval '1 month - 1 day');
 
-create function get_timesheet(timesheet_day.consultant_id%type, iso_month text) returns setof timesheet_day stable
+drop function if exists number_of_days_in_month(year_month) cascade;
+create function number_of_days_in_month(year_month) returns int immutable
+  return extract(days from last_day_of($1));
+
+create function get_timesheet(timesheet_day.consultant_id%type, year_month) returns setof timesheet_day stable
   begin atomic
     select *
     from timesheet_day
     where
       consultant_id = $1
-      and compose_iso_month(date) = iso_month;
+      and year_month_of(date) = $2;
   end;
 
-create function is_timesheet_complete(timesheet_day.consultant_id%type, iso_month text) returns boolean stable
+create function is_timesheet_complete(timesheet_day.consultant_id%type, year_month) returns boolean stable
   begin atomic
-    select count(*) = compose_number_of_days_in_month(iso_month)
+    select count(*) = number_of_days_in_month($2)
     from timesheet_day
     where
       consultant_id = $1
-      and compose_iso_month(date) = iso_month;
+      and year_month_of(date) = $2;
   end;
 
 drop function if exists change_timesheet(timesheet_day.consultant_id%type, timesheet_day.date%type, timesheet_day.project_id%type);
@@ -116,8 +122,8 @@ create or replace function change_timesheet(timesheet_day.consultant_id%type, ti
       returning *;
   end;
 
-drop function if exists change_timesheet(timesheet_day.consultant_id%type, iso_month text, timesheet_day.project_id%type);
-create or replace function change_timesheet(timesheet_day.consultant_id%type, iso_month text, timesheet_day.project_id%type) returns timesheet_day
+drop function if exists change_timesheet(timesheet_day.consultant_id%type, year_month, timesheet_day.project_id%type);
+create or replace function change_timesheet(timesheet_day.consultant_id%type, year_month, timesheet_day.project_id%type) returns timesheet_day
   begin atomic
     insert into timesheet_day
       (consultant_id, date, project_id)
@@ -127,21 +133,23 @@ create or replace function change_timesheet(timesheet_day.consultant_id%type, is
         $3
       from
         generate_series(
-          compose_start_of_iso_month(iso_month)::timestamp,
-          compose_last_day_of_iso_month(iso_month)::timestamp,
+          first_day_of($2)::timestamp,
+          last_day_of($2)::timestamp,
           interval '1 day'
         ) date
       on conflict (consultant_id, date) do update set project_id = excluded.project_id
       returning *;
   end;
 
-create function compose_project_summary(iso_month text) returns table (project_id project.id%type, number_of_days int) stable
+create function compose_project_summary(year_month) returns table (project_id project.id%type, number_of_days int) stable
   begin atomic
     select
       project_id,
       count(*)
     from timesheet_day
-    where compose_iso_month(date) = iso_month
+    where
+      extract(year from date) = $1.year
+      and extract(month from date) = $1.month
     group by project_id;
   end;
 
@@ -173,6 +181,22 @@ drop function if exists bad_request(http_response) cascade;
 create function bad_request() returns http_response immutable
   return row(400, json_build_object('Content-Type', 'application/json'), json_build_object());
 
+-- format converters
+
+drop function if exists compose_iso_month(date) cascade;
+create function compose_iso_month(date) returns text immutable
+  return to_char($1, 'YYYY-MM');
+
+drop function if exists parse_iso_month(text) cascade;
+create function parse_iso_month(iso_month text) returns year_month immutable
+  begin atomic
+    select row(
+      extract(year from first_day_of_month),
+      extract(month from first_day_of_month)
+    )
+    from to_date($1, 'YYYY-MM') as first_day_of_month;
+  end;
+
 -- http endpoints
 
 drop function if exists "GET /timesheets"(http_request);
@@ -197,8 +221,8 @@ create function "GET /timesheets"(req http_request) returns http_response stable
                 coalesce(every(complete), false)
               from
                 coalesce(req.query->>'consultant', req.headers->>'x-sqlfe-user-id') as consultant_id,
-                is_timesheet_complete(consultant_id, req.query->>'month') as complete,
-                get_timesheet(consultant_id, req.query->>'month')
+                is_timesheet_complete(consultant_id, parse_iso_month(req.query->>'month')) as complete,
+                get_timesheet(consultant_id, parse_iso_month(req.query->>'month'))
             )
           select to_json(timesheet.*) from timesheet
         ))
@@ -233,7 +257,7 @@ create or replace function "POST /timesheets"(req http_request) returns http_res
           to_json(
             change_timesheet(
               req.body->>'consultant',
-              req.body->>'month',
+              parse_iso_month(req.body->>'month'),
               req.body->>'project'
             )
           )
@@ -254,7 +278,7 @@ create or replace function "GET /projects"(req http_request) returns http_respon
             json_object_agg(project_id, number_of_days)
           from
             compose_project_summary(
-              req.query->>'month'
+              parse_iso_month(req.query->>'month')
             )
         ))
       else

@@ -28,7 +28,7 @@ delete from project;
 --   )
 --   insert into assert_equals_int
 --   select number_of_days, 1
---   from compose_project_summary('2019-01')
+--   from compose_project_summary(row(2019, 1))
 --   where project_id = 'eat_cakes';
 
 insert into consultant (id, name) values ('RDA', '');
@@ -39,7 +39,7 @@ insert into timesheet_day
 
 insert into assert_equals_int
   select number_of_days, 1
-  from compose_project_summary('2019-01')
+  from compose_project_summary(row(2019, 1))
   where project_id = 'eat_cakes';
 
 insert into timesheet_day
@@ -48,7 +48,7 @@ insert into timesheet_day
 
 insert into assert_equals_int
   select number_of_days, 2
-  from compose_project_summary('2019-01')
+  from compose_project_summary(row(2019, 1))
   where project_id = 'eat_cakes';
 
 insert into consultant (id, name) values ('TSP', '');
@@ -58,7 +58,7 @@ insert into timesheet_day
 
 insert into assert_equals_int
   select number_of_days, 3
-  from compose_project_summary('2019-01')
+  from compose_project_summary(row(2019, 1))
   where project_id = 'eat_cakes';
 
 insert into project (id, name) values ('friendship_magic', '');
@@ -70,13 +70,13 @@ update timesheet_day
 
 insert into assert_equals_int
   select number_of_days, 2
-  from compose_project_summary('2019-01')
+  from compose_project_summary(row(2019, 1))
   where project_id = 'eat_cakes';
 
 
-select change_timesheet('RDA', '2019-01', 'friendship_magic');
+select change_timesheet('RDA', row(2019, 1), 'friendship_magic');
 
 insert into assert
-  select is_timesheet_complete('RDA', '2019-01');
+  select is_timesheet_complete('RDA', row(2019, 1));
 
 rollback;

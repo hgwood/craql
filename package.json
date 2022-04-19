@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "nodemon --require dotenv/config --ext js,sql --inspect src/index.js",
+    "dev": "nodemon --require dotenv/config --ext js --inspect src/index.js",
+    "upgrade": "nodemon --watch src --ext sql,js,sh --exec sh src/upgrade_db.sh",
     "migrate": "node --require dotenv/config migrate.js",
     "test": "nodemon --ext hurl --exec hurl *.hurl --test"
   },

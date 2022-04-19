@@ -21,7 +21,7 @@ async function main() {
   const port = process.env.PORT || 8788;
   const db = pgp(dbConnection);
   // const pgPool = new pg.Pool();
-  await db.any((await readFile("./src/app.sql")).toString());
+  // await db.any((await readFile("./src/app.sql")).toString());
   try {
     await db.any((await readFile("./src/test.sql")).toString());
   } catch (err) {

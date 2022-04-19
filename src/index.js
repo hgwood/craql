@@ -69,35 +69,42 @@ async function main() {
         query: Object.fromEntries(reqUrl.searchParams.entries()),
       };
       console.log({ sqlfeReq });
-      const response = await db.tx(async (tx) => {
-        await tx.query(
-          "select set_config('sqlfe.req', '${this:raw}', true);",
-          sqlfeReq
-        );
-        if (req.headers["x-sqlfe-role"]) {
-          await tx.query(`set local role "${req.headers["x-sqlfe-role"]}"`);
-        }
-        console.log(
-          await tx.one(
-            `select (current_setting('sqlfe.req', true)::json)->'headers'->>'x-sqlfe-user-id'`
-          )
-        );
-        console.log(await tx.one(`select current_user`));
-        console.log(await tx.one(`select current_role`));
-        console.log(`Running`, route.functionName);
-        return tx.one(
-          `select ($(functionName:name)(row($(url), $(pathname), $(query:json), $(method), $(headers:json), $(body:json)))).*`,
-          {
-            functionName: route.functionName,
-            url: reqUrl.toString(),
-            pathname: reqUrl.pathname,
-            query: sqlfeReq.query,
-            method: req.method,
-            headers: sqlfeReq.headers,
-            body: sqlfeReq.body,
+      const response = await db.tx(
+        {
+          mode: new pgPromise.txMode.TransactionMode({
+            readOnly: route.method === "GET",
+          }),
+        },
+        async (tx) => {
+          await tx.query(
+            "select set_config('sqlfe.req', '${this:raw}', true);",
+            sqlfeReq
+          );
+          if (req.headers["x-sqlfe-role"]) {
+            await tx.query(`set local role "${req.headers["x-sqlfe-role"]}"`);
           }
-        );
-      });
+          console.log(
+            await tx.one(
+              `select (current_setting('sqlfe.req', true)::json)->'headers'->>'x-sqlfe-user-id'`
+            )
+          );
+          console.log(await tx.one(`select current_user`));
+          console.log(await tx.one(`select current_role`));
+          console.log(`Running`, route.functionName);
+          return tx.one(
+            `select ($(functionName:name)(row($(url), $(pathname), $(query:json), $(method), $(headers:json), $(body:json)))).*`,
+            {
+              functionName: route.functionName,
+              url: reqUrl.toString(),
+              pathname: reqUrl.pathname,
+              query: sqlfeReq.query,
+              method: req.method,
+              headers: sqlfeReq.headers,
+              body: sqlfeReq.body,
+            }
+          );
+        }
+      );
       console.log(inspect({ response }, { depth: null, colors: true }));
       res.writeHead(response.status_code, response.headers);
       res.end(JSON.stringify(response.body));

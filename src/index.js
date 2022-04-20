@@ -23,6 +23,7 @@ async function main() {
   // const pgPool = new pg.Pool();
   // await db.any((await readFile("./src/app.sql")).toString());
   try {
+    await db.any("set search_path to sqlfe, public;");
     await db.any((await readFile("./src/test.sql")).toString());
   } catch (err) {
     if (err.constraint === "assert_equals_int_check") {
@@ -76,6 +77,7 @@ async function main() {
           }),
         },
         async (tx) => {
+          await tx.any("set search_path to sqlfe, public;");
           await tx.query(
             "select set_config('sqlfe.req', '${this:raw}', true);",
             sqlfeReq

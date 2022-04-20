@@ -1,4 +1,3 @@
-
 create table if not exists consultant (
   id char(3) primary key,
   name text not null

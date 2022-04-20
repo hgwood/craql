@@ -1,10 +1,8 @@
 -- format converters
 
-drop function if exists compose_iso_month(date) cascade;
 create function compose_iso_month(date) returns text immutable
   return to_char($1, 'YYYY-MM');
 
-drop function if exists parse_iso_month(text) cascade;
 create function parse_iso_month(iso_month text) returns year_month immutable
   begin atomic
     select row(
@@ -16,7 +14,6 @@ create function parse_iso_month(iso_month text) returns year_month immutable
 
 -- http endpoints
 
-drop function if exists "GET /timesheets"(http_request);
 create function "GET /timesheets"(req http_request) returns http_response stable
   return
     case
@@ -47,7 +44,6 @@ create function "GET /timesheets"(req http_request) returns http_response stable
         bad_request()
     end;
 
-drop function if exists "POST /timesheets"(req http_request);
 create or replace function "POST /timesheets"(req http_request) returns http_response volatile
   return
     case
@@ -83,7 +79,6 @@ create or replace function "POST /timesheets"(req http_request) returns http_res
         bad_request()
     end;
 
-drop function if exists "GET /projects"(req http_request);
 create or replace function "GET /projects"(req http_request) returns http_response volatile
   return
     case
@@ -102,7 +97,6 @@ create or replace function "GET /projects"(req http_request) returns http_respon
         bad_request()
     end;
 
-drop function if exists get_endpoints();
 create function get_endpoints() returns table (function_name text, method text, path text) stable
   begin atomic
     select

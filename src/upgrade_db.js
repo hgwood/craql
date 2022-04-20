@@ -27,6 +27,7 @@ async function upgrade(filePaths) {
   await client.connect();
   try {
     await client.query("begin;");
+    await client.query("drop schema if exists sqlfe cascade; create schema sqlfe; grant usage on schema sqlfe to sqlfe; set search_path to sqlfe, public;")
     for (const filePath of filePaths) {
       console.log({ filePath });
       await client.query((await readFile(filePath)).toString());

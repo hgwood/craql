@@ -9,3 +9,4 @@ I want only consultants to be able to change their timesheets
 I want to prevent further changes to a consultant timesheet for a month, aka to lock the timesheet
 I want to prevent locking a timesheet if it is not complete
 I want users to have to authenticate to see anything
+I want bad requests to be described in a human readable way, in the language specified by the request

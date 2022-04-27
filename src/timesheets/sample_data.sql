@@ -22,7 +22,7 @@ insert into
     do update set name = excluded.name;
 
 insert into
-  timesheet_day (date, consultant_id, project_id)
+  timesheet_day (day, consultant_id, project_id)
   values
     ('2022-04-01', 'RDA', 'eat_cakes'),
     ('2022-04-02', 'RDA', 'race'),
@@ -30,5 +30,5 @@ insert into
     ('2022-03-02', 'TSP', 'celestia'),
     ('2022-04-01', 'TSP', 'friendship_magic'),
     ('2022-04-02', 'TSP', 'celestia')
-  on conflict (date, consultant_id)
+  on conflict (day, consultant_id)
     do update set project_id = excluded.project_id;

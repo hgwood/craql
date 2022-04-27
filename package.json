@@ -3,21 +3,17 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "nodemon --require dotenv/config --ext js --inspect src/index.js",
-    "upgrade": "nodemon --watch src --ext sql,js,sh --exec sh src/upgrade_db.sh",
-    "migrate": "node --require dotenv/config migrate.js",
-    "test": "nodemon --ext hurl --exec hurl *.hurl --test"
+    "serve": "nodemon --require dotenv/config --ext js --inspect src/index.js",
+    "deploy": "nodemon --watch src --watch test --ext sh,sql,psql --exec sh src/deploy.sh",
+    "test:sql": "nodemon --watch src --watch test --ext sh,sql,psql --exec sh test/run.sh",
+    "test:api": "nodemon --watch src --watch test_api --ext sql,psql,js,hurl --exec sh test_api/run.sh"
   },
   "dependencies": {
     "lodash": "4.17.21",
-    "mustache": "4.2.0",
-    "pg": "8.7.3",
-    "pg-promise": "10.11.1",
-    "yaml": "1.10.2"
+    "pg-promise": "10.11.1"
   },
   "devDependencies": {
     "dotenv": "16.0.0",
-    "nodemon": "2.0.15",
-    "postgres-migrations": "5.3.0"
+    "nodemon": "2.0.15"
   }
 }

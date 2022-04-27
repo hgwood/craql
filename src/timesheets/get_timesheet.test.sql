@@ -3,8 +3,10 @@ set search_path to "timesheets/app", "timesheets/data", "test";
 begin;
   -- arrange / given
   delete from timesheet_day;
-  insert into consultant values ('RDA', 'Rainbow Dash');
+  delete from consultant;
+  delete from project;
   insert into project values ('eat_cakes', 'Eat cakes');
+  insert into consultant values ('RDA', 'Rainbow Dash');
   insert into timesheet_day values
     ('2019-01-01', 'RDA', 'eat_cakes'),
     ('2019-01-02', 'RDA', 'eat_cakes');

@@ -1,7 +1,6 @@
 import { inspect } from "util";
 import http from "http";
 import { readFile } from "fs/promises";
-// import pg from "pg";
 import pgPromise from "pg-promise";
 import streamConsumers from "stream/consumers";
 import assert from "assert";
@@ -20,31 +19,14 @@ pgp.pg.types.setTypeParser(20, BigInt); // see https://github.com/vitaly-t/pg-pr
 async function main() {
   const port = process.env.PORT || 8788;
   const db = pgp(dbConnection);
-  // const pgPool = new pg.Pool();
-  // await db.any((await readFile("./src/app.sql")).toString());
-  try {
-    await db.any("set search_path to sqlfe, public;");
-    await db.any((await readFile("./src/test.sql")).toString());
-  } catch (err) {
-    if (err.constraint === "assert_equals_int_check") {
-      const [, actual, expected] =
-        err.detail?.match(/^Failing row contains \((.*), (.*)\)\.$/) || [];
-      console.log({ err, actual, expected });
-      assert.equal(actual, expected);
-    } else {
-      throw err;
-    }
-  }
   const routes = await fetchRoutes(db);
 
   const server = http.createServer(async (req, res) => {
-    // const client = await pgPool.connect();
     try {
       const reqUrl = new URL(req.url, "http://localhost");
       const route = routes.find(
         ({ method, path }) => path === reqUrl.pathname && method === req.method
       );
-      console.log({ route, method: req.method, path: reqUrl.pathname });
       if (!route) {
         res.writeHead(404);
         res.end();
@@ -69,7 +51,6 @@ async function main() {
         headers: req.headers,
         query: Object.fromEntries(reqUrl.searchParams.entries()),
       };
-      console.log({ sqlfeReq });
       const response = await db.tx(
         {
           mode: new pgPromise.txMode.TransactionMode({
@@ -77,7 +58,7 @@ async function main() {
           }),
         },
         async (tx) => {
-          await tx.any("set search_path to sqlfe, public;");
+          await tx.any(`set search_path to "timesheets/app";`);
           await tx.query(
             "select set_config('sqlfe.req', '${this:raw}', true);",
             sqlfeReq
@@ -85,13 +66,6 @@ async function main() {
           if (req.headers["x-sqlfe-role"]) {
             await tx.query(`set local role "${req.headers["x-sqlfe-role"]}"`);
           }
-          console.log(
-            await tx.one(
-              `select (current_setting('sqlfe.req', true)::json)->'headers'->>'x-sqlfe-user-id'`
-            )
-          );
-          console.log(await tx.one(`select current_user`));
-          console.log(await tx.one(`select current_role`));
           console.log(`Running`, route.functionName);
           return tx.one(
             `select ($(functionName:name)(row($(url), $(pathname), $(query:json), $(method), $(headers:json), $(body:json)))).*`,
@@ -107,15 +81,12 @@ async function main() {
           );
         }
       );
-      console.log(inspect({ response }, { depth: null, colors: true }));
       res.writeHead(response.status_code, response.headers);
       res.end(JSON.stringify(response.body));
     } catch (err) {
       console.error(err);
       res.writeHead(500);
       res.end();
-    } finally {
-      // client.release();
     }
   });
   server.listen(port, () => {
@@ -129,8 +100,7 @@ async function main() {
 }
 
 async function fetchRoutes(pgClient) {
-  const routes = await pgClient.many("select * from get_endpoints()");
-  console.log(routes);
+  const routes = await pgClient.many("select * from http.http_endpoint");
   return routes.map(({ function_name: functionName, method, path }) => ({
     functionName,
     method,

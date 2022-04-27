@@ -13,7 +13,7 @@ HTTP/* 200
 GET http://localhost:8788/timesheets?consultant=RDA&month=2022-05
 HTTP/* 200
 [Asserts]
-jsonpath "$.days['2022-05-01']" != "eat_cakes"
+jsonpath "$['2022-05-01']" != "eat_cakes"
 
 POST http://localhost:8788/timesheets
 {
@@ -26,4 +26,4 @@ HTTP/* 200
 GET http://localhost:8788/timesheets?consultant=RDA&month=2022-05
 HTTP/* 200
 [Asserts]
-jsonpath "$.days['2022-05-01']" == "eat_cakes"
+jsonpath "$['2022-05-01']" == "eat_cakes"

@@ -29,7 +29,7 @@ create function "GET /timesheets"(
         and req.query->>'consultant' is not null
       then
         ok((
-          select json_object_agg(day, project_id)
+          select coalesce(json_object_agg(day, project_id), '{}')
           from get_timesheet(
             req.query->>'consultant',
             parse_iso_month(req.query->>'month')

@@ -1,2 +1,2 @@
-\include_relative timesheets/drop.sql
+\include_relative timesheets/drop.psql
 \include_relative http/drop.sql

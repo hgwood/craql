@@ -6,4 +6,4 @@ docker compose exec postgres \
   --echo-errors \
   --echo-queries \
   --file=src/deploy.psql \
-  --file=test/run.psql
+  --file=test/sql/run.psql

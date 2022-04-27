@@ -1,1 +1,1 @@
-hurl --test test_api/*.hurl
+hurl --test test/api/*.hurl

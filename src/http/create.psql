@@ -1,0 +1,4 @@
+create schema "http";
+set search_path = "http";
+
+\include_relative http.sql

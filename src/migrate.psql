@@ -1,0 +1,3 @@
+create schema if not exists "timesheets/data";
+set search_path = "timesheets/data";
+\include_relative timesheets/migrations/1_timesheets.sql

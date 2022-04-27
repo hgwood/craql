@@ -1,0 +1,7 @@
+create schema "test";
+
+set search_path to "test";
+\include_relative assert_true.sql
+
+set search_path to "test", "timesheets/data";
+\include_relative assert_equals_timesheet_day.sql

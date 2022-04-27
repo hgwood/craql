@@ -1,0 +1,11 @@
+create schema "timesheets/app";
+
+set search_path =
+  "timesheets/app",
+  "timesheets/data",
+  "http";
+
+\include_relative year_month.sql
+\include_relative get_timesheet.sql
+\include_relative fill_timesheet.sql
+\include_relative policies.sql

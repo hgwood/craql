@@ -1,7 +1,7 @@
+create role consultant nologin;
+grant consultant to postgres;
+grant all on timesheet_day to consultant;
 alter table timesheet_day enable row level security;
-
-grant select on timesheet_day to consultant;
-
 create policy consultant_only_sees_their_own_timesheet on timesheet_day
   as permissive
   for all

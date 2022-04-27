@@ -1,3 +1,5 @@
+create schema if not exists sqlfe_tests;
+set search_path to sqlfe_tests, sqlfe, public;
 
 create temporary table if not exists assert (
   expectation boolean check (expectation)
@@ -8,6 +10,16 @@ create temporary table if not exists assert_equals_int (
   expected int,
   check (actual = expected)
 );
+
+create or replace function assert_true(boolean) returns void volatile
+  begin atomic
+    insert into assert values ($1);
+  end;
+
+create or replace function assert_equals(int, int) returns void volatile
+  begin atomic
+    insert into assert_equals_int values ($1, $2);
+  end;
 
 begin;
 
@@ -37,29 +49,26 @@ insert into timesheet_day
   (consultant_id, date, project_id)
   values ('RDA', '2019-01-01', 'eat_cakes');
 
-insert into assert_equals_int
-  select number_of_days, 1
-  from compose_project_summary(row(2019, 1))
-  where project_id = 'eat_cakes';
+select assert_equals(number_of_days, 1)
+from compose_project_summary(row(2019, 1))
+where project_id = 'eat_cakes';
 
 insert into timesheet_day
   (consultant_id, date, project_id)
   values ('RDA', '2019-01-02', 'eat_cakes');
 
-insert into assert_equals_int
-  select number_of_days, 2
-  from compose_project_summary(row(2019, 1))
-  where project_id = 'eat_cakes';
+select assert_equals(number_of_days, 2)
+from compose_project_summary(row(2019, 1))
+where project_id = 'eat_cakes';
 
 insert into consultant (id, name) values ('TSP', '');
 insert into timesheet_day
   (consultant_id, date, project_id)
   values ('TSP', '2019-01-02', 'eat_cakes');
 
-insert into assert_equals_int
-  select number_of_days, 3
-  from compose_project_summary(row(2019, 1))
-  where project_id = 'eat_cakes';
+select assert_equals(number_of_days, 3)
+from compose_project_summary(row(2019, 1))
+where project_id = 'eat_cakes';
 
 insert into project (id, name) values ('friendship_magic', '');
 update timesheet_day
@@ -68,15 +77,12 @@ update timesheet_day
     consultant_id = 'RDA'
     and date = '2019-01-02';
 
-insert into assert_equals_int
-  select number_of_days, 2
-  from compose_project_summary(row(2019, 1))
-  where project_id = 'eat_cakes';
-
+select assert_equals(number_of_days, 2)
+from compose_project_summary(row(2019, 1))
+where project_id = 'eat_cakes';
 
 select change_timesheet('RDA', row(2019, 1), 'friendship_magic');
 
-insert into assert
-  select is_timesheet_complete('RDA', row(2019, 1));
+select assert_true(is_timesheet_complete('RDA', row(2019, 1)));
 
 rollback;

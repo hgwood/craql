@@ -1,2 +1,49 @@
-\include_relative select_migrations.psql
-\include_relative apply_pending_migrations.psql
+create schema if not exists migrations;
+
+set search_path to migrations;
+
+create table if not exists applied_migration (
+  id int primary key,
+  name text not null,
+  file_path text not null,
+  file_name text not null
+);
+
+create temporary table local_migration_file (
+  path text primary key,
+  content text not null
+);
+
+create view local_migration_file_info as (
+  select
+    match[2]::int as migration_id,
+    match[3] as migration_name,
+    match[1] as name,
+    path,
+    content
+  from
+    local_migration_file,
+    regexp_match(path, '/((\d+)_(\w+)\.sql)$') as match
+);
+
+create view pending_migration as (
+  select
+    concat_ws(
+      ' ',
+      local_migration_file_info.content,
+      format(
+        'insert into migrations.applied_migration values (%L);',
+        local_migration_file_info.migration_id
+      ),
+      'set search_path to public;'
+    ) as migration_code
+  from applied_migration
+  full outer join local_migration_file_info on
+    local_migration_file_info.migration_id = applied_migration.id
+  where applied_migration.id is null
+  order by local_migration_file_info.migration_id
+);
+
+\copy local_migration_file from program 'for each in src/*/migrations/*.sql; do echo -n $each,%; cat $each | tr ''\n'' '' ''; echo %; done' with (format csv, quote '%')
+
+select migration_code from pending_migration \gexec

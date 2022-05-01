@@ -1,8 +1,10 @@
+set search_path = "timesheets/data";
+
 drop schema if exists "timesheets/app" cascade;
 drop policy if exists consultant_only_sees_their_own_timesheet on timesheet_day;
-select exists(select from pg_roles where rolname = 'consultant') as consultant_exists;
-\gset
+
+select exists(select from pg_roles where rolname = 'consultant') as consultant_exists \gset
 \if :consultant_exists
-  revoke all on timesheet_day from consultant;
+  revoke all on all tables in schema "timesheets/data" from consultant;
   drop role consultant;
 \endif

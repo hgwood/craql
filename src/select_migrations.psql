@@ -1,0 +1,33 @@
+set search_path to "migrations";
+
+create temporary table local_migration_file (
+  path text primary key
+);
+
+create view migration_file_info (
+  path,
+  id
+) as (
+  select
+    path,
+    match[1]
+  from
+    local_migration_file,
+    regexp_match(path, '/(\d+)_(\w+)\.sql$') as match
+);
+
+create view pending_migration as (
+  select
+    path
+  from applied_migration
+  full outer join migration_file_info on migration_file_info.id = applied_migration.id
+  where applied_migration.id is null
+);
+
+\copy table_migration from program 'ls src/*/migrations/*.sql'
+
+select concat('\include_relative ', path)
+from pending_migration
+\g (border=0 tuples_only=on) apply_pending_migrations.psql
+
+-- \include_relative timesheets/migrations/1_timesheets.sql

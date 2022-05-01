@@ -1,1 +1,2 @@
-\include_relative timesheets/migrations/1_timesheets.sql
+\include_relative select_migrations.psql
+\include_relative apply_pending_migrations.psql

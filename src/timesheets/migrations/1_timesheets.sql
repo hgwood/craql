@@ -1,3 +1,6 @@
+create schema if not exists "timesheets/data";
+set search_path = "timesheets/data";
+
 create table if not exists consultant (
   id text primary key,
   name text not null

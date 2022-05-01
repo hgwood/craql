@@ -14,6 +14,11 @@ create temporary table local_migration_file (
   content text not null
 );
 
+create temporary table assert_migration_file_exists (
+  path text primary key,
+  exists boolean not null check(exists)
+);
+
 create view local_migration_file_info as (
   select
     match[2]::int as migration_id,
@@ -26,24 +31,49 @@ create view local_migration_file_info as (
     regexp_match(path, '/((\d+)_(\w+)\.sql)$') as match
 );
 
-create view pending_migration as (
+create view migration as (
   select
-    concat_ws(
-      ' ',
-      local_migration_file_info.content,
-      format(
-        'insert into migrations.applied_migration values (%L);',
-        local_migration_file_info.migration_id
-      ),
-      'set search_path to public;'
-    ) as migration_code
+    applied_migration.id as database_recorded_id,
+    applied_migration.file_path as database_recorded_file_path,
+    local_migration_file_info.migration_id as file_migration_id,
+    local_migration_file_info.migration_name as file_migration_name,
+    local_migration_file_info.path as file_path,
+    local_migration_file_info.name as file_name,
+    local_migration_file_info.content as file_content
   from applied_migration
   full outer join local_migration_file_info on
     local_migration_file_info.migration_id = applied_migration.id
-  where applied_migration.id is null
-  order by local_migration_file_info.migration_id
+);
+
+create view pending_migration as (
+  select
+    file_migration_id,
+    file_path,
+    concat_ws(
+      ' ',
+      file_content,
+      format(
+        'insert into migrations.applied_migration (id, name, file_path, file_name) values (%L, %L, %L, %L);',
+        file_migration_id,
+        file_migration_name,
+        file_path,
+        file_name
+      ),
+      'set search_path to public;'
+    ) as migration_code
+  from migration
+  where database_recorded_id is null
+  order by migration.file_migration_id
 );
 
 \copy local_migration_file from program 'for each in src/*/migrations/*.sql; do echo -n $each,%; cat $each | tr ''\n'' '' ''; echo %; done' with (format csv, quote '%')
 
+insert into assert_migration_file_exists
+select
+  database_recorded_file_path,
+  file_migration_id is not null
+from migration
+where file_migration_id is null;
+
+select file_migration_id, file_path from pending_migration;
 select migration_code from pending_migration \gexec

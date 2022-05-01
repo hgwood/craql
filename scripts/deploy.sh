@@ -1,4 +1,4 @@
-docker compose exec postgres \
+docker compose exec -T postgres \
   psql \
   --username postgres \
   --single-transaction \

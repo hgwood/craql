@@ -1,12 +1,16 @@
+create extension if not exists pgcrypto;
+
 create schema if not exists migrations;
 
-set search_path to migrations;
+set search_path to migrations, public;
 
 create table if not exists applied_migration (
   id int primary key,
   name text not null,
   file_path text not null,
-  file_name text not null
+  file_name text not null,
+  file_digest bytea not null,
+  applied_at timestamp not null default now()
 );
 
 create temporary table local_migration_file (
@@ -14,9 +18,15 @@ create temporary table local_migration_file (
   content text not null
 );
 
-create temporary table assert_migration_file_exists (
+create temporary table assert_migration_file_has_not_changed_since_application (
   path text primary key,
-  exists boolean not null check(exists)
+  exists boolean not null,
+  digest_from_file bytea not null,
+  digest_from_database bytea not null,
+  check (
+    exists = true
+    and digest_from_file = digest_from_database
+  )
 );
 
 create view local_migration_file_info as (
@@ -25,7 +35,8 @@ create view local_migration_file_info as (
     match[3] as migration_name,
     match[1] as name,
     path,
-    content
+    content,
+    digest(content, 'sha1'::text) as digest
   from
     local_migration_file,
     regexp_match(path, '/((\d+)_(\w+)\.sql)$') as match
@@ -35,11 +46,14 @@ create view migration as (
   select
     applied_migration.id as database_recorded_id,
     applied_migration.file_path as database_recorded_file_path,
+    applied_migration.file_digest as database_recorded_file_digest,
+    applied_migration.applied_at as database_recorded_application_timestamp,
     local_migration_file_info.migration_id as file_migration_id,
     local_migration_file_info.migration_name as file_migration_name,
     local_migration_file_info.path as file_path,
     local_migration_file_info.name as file_name,
-    local_migration_file_info.content as file_content
+    local_migration_file_info.content as file_content,
+    local_migration_file_info.digest as file_digest
   from applied_migration
   full outer join local_migration_file_info on
     local_migration_file_info.migration_id = applied_migration.id
@@ -53,11 +67,12 @@ create view pending_migration as (
       ' ',
       file_content,
       format(
-        'insert into migrations.applied_migration (id, name, file_path, file_name) values (%L, %L, %L, %L);',
+        'insert into migrations.applied_migration values (%L, %L, %L, %L, %L);',
         file_migration_id,
         file_migration_name,
         file_path,
-        file_name
+        file_name,
+        file_digest
       ),
       'set search_path to public;'
     ) as migration_code
@@ -68,12 +83,13 @@ create view pending_migration as (
 
 \copy local_migration_file from program 'for each in src/*/migrations/*.sql; do echo -n $each,%; cat $each | tr ''\n'' '' ''; echo %; done' with (format csv, quote '%')
 
-insert into assert_migration_file_exists
+insert into assert_migration_file_has_not_changed_since_application
 select
   database_recorded_file_path,
-  file_migration_id is not null
-from migration
-where file_migration_id is null;
+  file_migration_id is not null,
+  database_recorded_file_digest,
+  file_digest
+from migration;
 
 select file_migration_id, file_path from pending_migration;
 select migration_code from pending_migration \gexec

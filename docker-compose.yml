@@ -8,7 +8,8 @@ services:
       POSTGRES_PASSWORD: $PGPASSWORD
       POSTGRES_DB: $PGDATABASE
     ports:
-      - "5432:5432"
+      - target: 5432
+        published: $PGPORT
     volumes:
       - ./:/app
     working_dir: /app

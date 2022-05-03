@@ -22,10 +22,13 @@ create temporary table assert_migration_file_has_not_changed_since_application (
   path text primary key,
   exists boolean not null,
   digest_from_file bytea not null,
-  digest_from_database bytea not null,
+  digest_from_database bytea,
   check (
     exists = true
-    and digest_from_file = digest_from_database
+    and (
+      digest_from_database is null
+      or digest_from_database = digest_from_file
+    )
   )
 );
 
@@ -85,10 +88,10 @@ create view pending_migration as (
 
 insert into assert_migration_file_has_not_changed_since_application
 select
-  database_recorded_file_path,
+  file_path,
   file_migration_id is not null,
-  database_recorded_file_digest,
-  file_digest
+  file_digest,
+  database_recorded_file_digest
 from migration;
 
 select file_migration_id, file_path from pending_migration;

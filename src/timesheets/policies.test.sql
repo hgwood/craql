@@ -12,7 +12,7 @@ begin;
     ('2019-01-01', 'RDA', 'eat_cakes'),
     ('2019-01-02', 'AJA', 'eat_cakes');
   -- act / when
-  select set_config('sqlfe.req', '{ "headers": { "x-sqlfe-user-id": "RDA" } }', true);
+  select set_config('craql.req', '{ "headers": { "x-craql-user-id": "RDA" } }', true);
   set role to consultant;
   with actual as (select * from get_timesheet(null, row(2019, 1)))
   -- assert / then

@@ -3,8 +3,8 @@
 ## A consultant can see their timesheet without specifying the consultant query param
 
 GET http://localhost:8788/timesheets?month=2022-04
-X-Sqlfe-User-Id: RDA
-X-Sqlfe-Role: consultant
+X-Craql-User-Id: RDA
+X-Craql-Role: consultant
 HTTP/* 200
 [Asserts]
 jsonpath "$.days['2022-04-01']" == "eat_cakes"
@@ -21,8 +21,8 @@ POST http://localhost:8788/timesheets
 HTTP/* 200
 
 GET http://localhost:8788/timesheets?consultant=TSP&month=2022-05
-X-Sqlfe-User-Id: RDA
-X-Sqlfe-Role: consultant
+X-Craql-User-Id: RDA
+X-Craql-Role: consultant
 HTTP/* 200
 [Asserts]
 jsonpath "$.days['2022-05-01']" not exists

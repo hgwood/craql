@@ -43,7 +43,7 @@ async function main() {
           return;
         }
       }
-      const sqlfeReq = {
+      const craqlReq = {
         body,
         headers: req.headers,
         query: Object.fromEntries(reqUrl.searchParams.entries()),
@@ -57,11 +57,11 @@ async function main() {
         async (tx) => {
           await tx.any(`set search_path to "timesheets/app";`);
           await tx.query(
-            "select set_config('sqlfe.req', '${this:raw}', true);",
-            sqlfeReq
+            "select set_config('craql.req', '${this:raw}', true);",
+            craqlReq
           );
-          if (req.headers["x-sqlfe-role"]) {
-            await tx.query(`set local role "${req.headers["x-sqlfe-role"]}"`);
+          if (req.headers["x-craql-role"]) {
+            await tx.query(`set local role "${req.headers["x-craql-role"]}"`);
           }
           const query = pgp.as.format(
             `select ($(functionName:name)(row($(url), $(pathname), $(query:json), $(method), $(headers:json), $(body:json))::http.http_request)).*`,
@@ -69,10 +69,10 @@ async function main() {
               functionName: route.functionName,
               url: reqUrl.toString(),
               pathname: reqUrl.pathname,
-              query: sqlfeReq.query,
+              query: craqlReq.query,
               method: req.method,
-              headers: sqlfeReq.headers,
-              body: sqlfeReq.body,
+              headers: craqlReq.headers,
+              body: craqlReq.body,
             }
           );
           return tx.one(query);

@@ -84,7 +84,7 @@ create view pending_migration as (
   order by migration.file_migration_id
 );
 
-\copy local_migration_file from program 'for each in src/*/migrations/*.sql; do echo -n $each,%; cat $each | tr ''\n'' '' ''; echo %; done' with (format csv, quote '%')
+\copy local_migration_file from program 'sh scripts/migration_files_as_csv.sh' with (format csv, quote '%')
 
 insert into assert_migration_file_has_not_changed_since_application
 select

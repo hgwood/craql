@@ -1,6 +1,4 @@
-docker compose exec postgres \
-  psql \
-  --username postgres \
+sh scripts/psql.sh \
   --single-transaction \
   --variable=ON_ERROR_STOP=on \
   --echo-errors \

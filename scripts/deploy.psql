@@ -1,0 +1,3 @@
+\include_relative ../src/drop.psql
+\include_relative migrate.psql
+\include_relative ../src/create.psql

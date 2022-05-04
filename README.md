@@ -18,7 +18,7 @@ processing apps. So it might be a good idea to use a high-level,
 data-manipulation-specific programming language. SQL is also very often already
 part of the stack anyway!
 
-> ⚠ I'm referring to SQL, not PL/SQL or PL/pgSQL.
+> ⚠ I'm referring to SQL, not PL/pgSQL (aka stored procedures).
 
 ## How does it work?
 

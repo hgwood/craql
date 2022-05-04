@@ -18,12 +18,14 @@ processing apps. So it might be a good idea to use a high-level,
 data-manipulation-specific programming language. SQL is also very often already
 part of the stack anyway!
 
+> ⚠ I'm referring to SQL, not PL/SQL or PL/pgSQL.
+
 ## How does it work?
 
 - Tables are defined using SQL migration files, as usual for a typical business
   app.
 - Business operations are written as SQL functions.
-- HTTP endpoints are written as SQL functions. Since the database does talk
+- HTTP endpoints are also written as SQL functions. Since the database does talk
   HTTP, these are not actual endpoints, only functions that accept an HTTP
   request-like data structure and return an HTTP response-like data structure.
 - A tiny, generic Node.js web server exposes those SQL functions as actual HTTP
@@ -59,10 +61,10 @@ that compares two rows of a table.
 ## What are those `.psql` files?
 
 These files are meant to be run using
-[psql](https://www.postgresql.org/docs/current/app-psql.html) (using `psql
---file=`). They contain plain SQL along with psql meta-commands.
+[psql](https://www.postgresql.org/docs/current/app-psql.html) (`psql
+--file=...`). They contain plain SQL along with psql meta-commands.
 
-## How is the code deployed to the database?
+## How is code deployed to the database?
 
 Defining code entities (functions, types, etc.) in conventional languages is
 declarative. This is possible because compilers are stateless one-off processes

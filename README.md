@@ -40,6 +40,7 @@ you'll also need [hurl](https://hurl.dev/).
 - Copy `.env.example` to `.env`.
 - Run the database using `docker compose up -d`.
 - Deploy the app to the database using `sh scripts/deploy.sh`.
+- Optional: insert some data using `sh scripts/insert_sample_data.sh`.
 - Install dependencies for the web server using `npm install`.
 - Start the web server using `npm start`.
 - Call the HTTP endpoints using your favorite HTTP client. Take a look at the

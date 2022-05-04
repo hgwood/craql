@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "start": "node --require dotenv/config src/server.js",
     "serve": "nodemon --require dotenv/config --ext js --inspect src/server.js",
     "deploy": "nodemon --watch src --watch test --ext sql,psql --exec sh scripts/deploy.sh",
     "deploy_test": "nodemon --watch src --watch test --ext sql,psql,js,hurl --exec sh scripts/deploy_test.sh",

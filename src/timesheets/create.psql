@@ -6,6 +6,7 @@ set search_path =
   "http";
 
 \include_relative year_month.sql
+\include_relative is_timesheet_complete.sql
 \include_relative get_timesheet.sql
 \include_relative fill_timesheet.sql
 \include_relative policies.sql

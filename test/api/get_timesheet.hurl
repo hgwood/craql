@@ -27,24 +27,24 @@ HTTP/* 400
 GET http://localhost:8788/timesheets?consultant=RDA&month=2022-04
 HTTP/* 200
 [Asserts]
-jsonpath "$['2022-04-01']" == "eat_cakes"
-jsonpath "$['2022-04-02']" == "race"
+jsonpath "$.days['2022-04-01']" == "eat_cakes"
+jsonpath "$.days['2022-04-02']" == "race"
 
 ## It returns different results for another consultant
 
 GET http://localhost:8788/timesheets?consultant=TSP&month=2022-04
 HTTP/* 200
 [Asserts]
-jsonpath "$['2022-04-01']" == "friendship_magic"
-jsonpath "$['2022-04-02']" == "celestia"
+jsonpath "$.days['2022-04-01']" == "friendship_magic"
+jsonpath "$.days['2022-04-02']" == "celestia"
 
 ## It returns different results for another month
 
 GET http://localhost:8788/timesheets?consultant=TSP&month=2022-03
 HTTP/* 200
 [Asserts]
-jsonpath "$['2022-03-01']" == "friendship_magic"
-jsonpath "$['2022-03-02']" == "celestia"
+jsonpath "$.days['2022-03-01']" == "friendship_magic"
+jsonpath "$.days['2022-03-02']" == "celestia"
 
 # It returns an empty object if no days have a project
 

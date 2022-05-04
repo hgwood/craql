@@ -1,9 +1,6 @@
-import { inspect } from "util";
 import http from "http";
-import { readFile } from "fs/promises";
 import pgPromise from "pg-promise";
 import streamConsumers from "stream/consumers";
-import assert from "assert";
 
 const dbConnection = {
   host: process.env.PGHOST,
@@ -19,7 +16,7 @@ pgp.pg.types.setTypeParser(20, BigInt); // see https://github.com/vitaly-t/pg-pr
 async function main() {
   const port = process.env.PORT || 8788;
   const db = pgp(dbConnection);
-  const routes = await fetchRoutes(db);
+  const routes = await fetchAvailableEndpoints(db);
 
   const server = http.createServer(async (req, res) => {
     try {
@@ -99,7 +96,7 @@ async function main() {
   });
 }
 
-async function fetchRoutes(pgClient) {
+async function fetchAvailableEndpoints(pgClient) {
   const routes = await pgClient.many("select * from http.http_endpoint");
   return routes.map(({ function_name: functionName, method, path }) => ({
     functionName,

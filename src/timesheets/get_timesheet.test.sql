@@ -11,7 +11,7 @@ begin;
     ('2019-01-01', 'RDA', 'eat_cakes'),
     ('2019-01-02', 'RDA', 'eat_cakes');
   -- act / when
-  with actual as (select * from get_timesheet('RDA', row(2019, 01)))
+  with actual as (select * from get_timesheet('RDA', row(2019, 1)))
   -- assert / then
   select
     assert_equals(actual, expected::timesheet_day)

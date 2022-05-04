@@ -102,3 +102,7 @@ temporary table in the database, then computes (in SQL) which ones have not been
 already applied, then applies those (using `\gexec` from psql). It also checks
 that migration file corresponding to migrations that have already been applied
 in the past have not changed since. See `scripts/migrate.psql`.
+
+## Does this use standard SQL?
+
+No. This uses SQL only supported by PostgreSQL 14 and later.

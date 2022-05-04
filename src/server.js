@@ -66,9 +66,8 @@ async function main() {
           if (req.headers["x-sqlfe-role"]) {
             await tx.query(`set local role "${req.headers["x-sqlfe-role"]}"`);
           }
-          console.log(`Running`, route.functionName);
-          return tx.one(
-            `select ($(functionName:name)(row($(url), $(pathname), $(query:json), $(method), $(headers:json), $(body:json)))).*`,
+          const query = pgp.as.format(
+            `select ($(functionName:name)(row($(url), $(pathname), $(query:json), $(method), $(headers:json), $(body:json))::http.http_request)).*`,
             {
               functionName: route.functionName,
               url: reqUrl.toString(),
@@ -79,6 +78,7 @@ async function main() {
               body: sqlfeReq.body,
             }
           );
+          return tx.one(query);
         }
       );
       res.writeHead(response.status_code, response.headers);

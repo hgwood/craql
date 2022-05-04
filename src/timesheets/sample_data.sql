@@ -1,3 +1,5 @@
+set search_path to "timesheets/data";
+
 insert into
   consultant (id, name)
   values

@@ -6,7 +6,7 @@ create function get_timesheet(
     select *
     from timesheet_day
     where
-      consultant_id = $1
+      ($1 is null or consultant_id = $1)
       and year_month_of(day) = $2;
   end;
 
@@ -26,7 +26,6 @@ create function "GET /timesheets"(
     case
       when
         req.query->>'month' is not null
-        and req.query->>'consultant' is not null
       then
         ok((
           select

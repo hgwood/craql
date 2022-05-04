@@ -12,11 +12,6 @@ HTTP/* 200
 [Asserts]
 header "Content-Type" == "application/json"
 
-## It requires consultant query param
-
-GET http://localhost:8788/timesheets?month=2022-04
-HTTP/* 400
-
 ## It requires month query param
 
 GET http://localhost:8788/timesheets?consultant=RDA

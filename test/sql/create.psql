@@ -1,5 +1,9 @@
 create schema "test";
 
+-- really not ideal to have to do this for all roles, but can't find any other
+-- way
+grant usage on schema test to consultant;
+
 set search_path to "test";
 \include_relative assert_true.sql
 

@@ -7,7 +7,7 @@ create table assert_equals_timesheet_day (
 create function assert_equals(
   actual timesheet_day,
   expected timesheet_day
-) returns void volatile
+) returns void volatile security definer
   begin atomic
     insert into assert_equals_timesheet_day
     values ($1, $2);

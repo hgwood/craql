@@ -13,7 +13,7 @@ work on one project each day.
 ## Why SQL?
 
 The challenge of building business apps is to model the business data and
-processes, and to keep up with evolution of those. They are information
+processes, and to keep up with the evolution of those. They are information
 processing apps. So it might be a good idea to use a high-level,
 data-manipulation-specific programming language. SQL is also very often already
 part of the stack anyway!
@@ -25,7 +25,7 @@ part of the stack anyway!
 - Tables are defined using SQL migration files, as usual for a typical business
   app.
 - Business operations are written as SQL functions.
-- HTTP endpoints are also written as SQL functions. Since the database does talk
+- HTTP endpoints are also written as SQL functions. Since the database does not talk
   HTTP, these are not actual endpoints, only functions that accept an HTTP
   request-like data structure and return an HTTP response-like data structure.
 - A tiny, generic Node.js web server exposes those SQL functions as actual HTTP

@@ -71,6 +71,7 @@ create view pending_migration as (
       ' ',
       file_content,
       format(
+        'set search_path to public;',
         'insert into migrations.applied_migration values (%L, %L, %L, %L, %L);',
         file_migration_id,
         file_migration_name,

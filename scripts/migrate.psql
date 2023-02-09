@@ -70,8 +70,8 @@ create view pending_migration as (
     concat_ws(
       ' ',
       file_content,
+      'set search_path to public;',
       format(
-        'set search_path to public;',
         'insert into migrations.applied_migration values (%L, %L, %L, %L, %L);',
         file_migration_id,
         file_migration_name,

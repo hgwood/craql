@@ -1,5 +1,6 @@
 sh scripts/psql.sh \
   --variable=ON_ERROR_STOP=on \
   --echo-errors \
-  --echo-queries \
-  --file=test/sql/run.psql
+  --quiet \
+  --file=test/sql/run.psql \
+  --output test/sql/logs.txt

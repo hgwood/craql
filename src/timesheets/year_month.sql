@@ -1,4 +1,13 @@
-create type year_month as (year int, month int);
+create type _year_month as (year int, month int);
+
+create domain year_month as _year_month
+  not null
+  check(
+    (value).year is not null
+    and (value).month is not null
+    and (value).month >= 1
+    and (value).month <= 12
+  );
 
 create function year_month_of(date) returns year_month
   return row(

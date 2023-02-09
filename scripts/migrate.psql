@@ -96,5 +96,10 @@ select
   database_recorded_file_digest
 from migration;
 
+select count(*) from pending_migration \gset
+\echo Pending migrations: :count
+\pset tuples_only on
 select file_migration_id, file_path from pending_migration;
+\pset tuples_only off
+
 select migration_code from pending_migration \gexec

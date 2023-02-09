@@ -1,3 +1,5 @@
+set client_min_messages to warning;
+
 \include_relative ../src/drop.psql
 \include_relative migrate.psql
 \include_relative ../src/create.psql

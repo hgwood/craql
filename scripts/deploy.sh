@@ -3,5 +3,5 @@ sh scripts/psql.sh \
   --single-transaction \
   --variable=ON_ERROR_STOP=on \
   --echo-errors \
-  --echo-queries \
+  --quiet \
   --file=scripts/deploy.psql
